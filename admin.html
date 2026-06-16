@@ -41,7 +41,7 @@
             <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="staff"><i class="fa-solid fa-user-doctor w-5"></i> 管理藥師清單</li>
             <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="params"><i class="fa-solid fa-tags w-5"></i> 參數基本檔維護</li>
             <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="drugs"><i class="fa-solid fa-pills w-5"></i> 藥品基本檔維護</li>
-            <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="formulas"><i class="fa-solid fa-flask w-5"></i> 視覺化公式維護</li>
+            <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3 hidden" id="nav-formulas" data-target="formulas"><i class="fa-solid fa-flask w-5"></i> 公式編輯區</li>
         </ul></nav>
         <div class="p-4 border-t border-white/20 flex flex-col gap-2">
             <button id="btn-open-pw" class="w-full text-sm bg-blue-800 py-2 rounded"><i class="fa-solid fa-key mr-1"></i> 修改密碼</button><a href="./index.html" class="block text-center text-sm border border-white/40 py-2 rounded"><i class="fa-solid fa-arrow-left mr-1"></i> 返回前端</a>
@@ -71,10 +71,7 @@
                 <button id="btn-save-staff" class="bg-[#1B365D] text-white px-4 py-2 rounded text-sm font-bold">新增藥師</button>
             </div>
             <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
-                <div class="p-3 bg-gray-50 border-b flex items-center justify-between">
-                    <span class="font-bold text-sm text-gray-700">藥師清單</span>
-                    <input type="text" id="filter-staff" placeholder="模糊搜尋..." class="border rounded p-1.5 text-sm w-64">
-                </div>
+                <div class="p-3 bg-gray-50 border-b flex items-center justify-between"><span class="font-bold text-sm text-gray-700">藥師清單</span><input type="text" id="filter-staff" placeholder="模糊搜尋..." class="border rounded p-1.5 text-sm w-64"></div>
                 <table class="w-full data-table text-sm"><thead><tr><th>員工編號</th><th>姓名</th><th>權限</th><th>狀態</th><th>操作</th></tr></thead><tbody id="list-staff"></tbody></table>
             </div>
         </section>
@@ -94,10 +91,7 @@
                 </div>
             </div>
             <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
-                <div class="p-3 bg-gray-50 border-b flex items-center justify-between">
-                    <span class="font-bold text-sm text-gray-700">參數清單</span>
-                    <input type="text" id="filter-params" placeholder="模糊搜尋..." class="border rounded p-1.5 text-sm w-64">
-                </div>
+                <div class="p-3 bg-gray-50 border-b flex items-center justify-between"><span class="font-bold text-sm text-gray-700">參數清單</span><input type="text" id="filter-params" placeholder="模糊搜尋..." class="border rounded p-1.5 text-sm w-64"></div>
                 <table class="w-full data-table text-sm"><thead><tr><th>代碼</th><th>名稱</th><th>預設單位</th><th>操作</th></tr></thead><tbody id="list-params"></tbody></table>
             </div>
         </section>
@@ -134,7 +128,7 @@
             </div>
             <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
                 <div class="p-3 bg-gray-50 border-b flex items-center justify-between">
-                    <span class="font-bold text-sm text-gray-700">藥品清單</span>
+                    <span class="font-bold text-sm text-gray-700">藥品清單 (點擊公式圖示進入公式維護)</span>
                     <input type="text" id="filter-drugs" placeholder="模糊篩選(分類/名稱)..." class="border rounded p-1.5 text-sm w-64">
                 </div>
                 <table class="w-full data-table text-sm"><thead><tr><th>三層分類</th><th>中文名 / 商品名 / 一般名稱</th><th>狀態</th><th>操作</th></tr></thead><tbody id="list-drugs"></tbody></table>
@@ -142,11 +136,31 @@
         </section>
 
         <section id="formulas" class="tab-content">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">視覺化公式維護清單</h2>
-            <div class="bg-white p-5 rounded-lg shadow-sm border mb-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <button onclick="document.querySelector('[data-target=\'drugs\']').click()" class="text-sm text-blue-600 hover:text-blue-800 mb-1 inline-block"><i class="fa-solid fa-arrow-left"></i> 返回藥品清單</button>
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        <span id="formula-context-name" class="text-[#1B365D]">藥品名稱</span> 的專屬公式
+                    </h2>
+                </div>
+                <button id="btn-show-add-formula" class="bg-[#1B365D] text-white px-5 py-2 rounded font-bold hover:bg-blue-900 shadow">
+                    <i class="fa-solid fa-plus"></i> 新增公式
+                </button>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
+                <table class="w-full data-table text-sm">
+                    <thead><tr><th>方法名稱</th><th>公式內容 (點擊編輯)</th><th>單次/單日上限</th><th>操作</th></tr></thead>
+                    <tbody id="list-local-formulas"></tbody>
+                </table>
+            </div>
+
+            <div id="formula-editor-container" class="bg-white p-5 rounded-lg shadow-xl border border-blue-200 hidden relative">
+                <button id="btn-close-formula-editor" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <h3 class="font-bold text-[#1B365D] mb-4 border-b pb-2" id="formula-editor-title">新增計算公式</h3>
                 <input type="hidden" id="formula-mode" value="add"><input type="hidden" id="formula-id">
-                <div class="grid grid-cols-4 gap-4 mb-4">
-                    <div><label class="block text-xs font-bold mb-1">對應藥品 *</label><select id="admin-drug-select" class="w-full border rounded p-2 text-sm"></select></div>
+                
+                <div class="grid grid-cols-3 gap-4 mb-4">
                     <div><label class="block text-xs font-bold mb-1">計算方法名稱 *</label><input type="text" id="admin-formula-name" class="w-full border rounded p-2 text-sm"></div>
                     <div><label class="block text-xs font-bold mb-1">結果單位 *</label><input type="text" id="admin-result-unit" class="w-full border rounded p-2 text-sm"></div>
                     <div><label class="block text-xs font-bold mb-1">備註提醒</label><input type="text" id="admin-remark" class="w-full border rounded p-2 text-sm"></div>
@@ -163,18 +177,10 @@
                         <textarea id="admin-formula-string" rows="2" class="w-full border rounded p-2 text-sm font-mono" placeholder="組裝公式..."></textarea>
                         <div class="p-3 bg-blue-50 border border-blue-100 rounded text-xs"><div id="admin-test-inputs" class="grid grid-cols-3 gap-2 mb-2">請先輸入公式</div>結果：<span id="admin-test-result" class="font-bold text-lg text-[#1B365D]">--</span></div>
                         <div class="flex justify-end gap-2 mt-2">
-                            <button id="btn-cancel-formula" class="hidden bg-gray-400 text-white px-4 py-2 rounded text-sm font-bold">取消編輯</button>
-                            <button id="btn-save-formula" class="bg-[#1B365D] text-white px-4 py-2 rounded text-sm font-bold">新增公式</button>
+                            <button id="btn-save-formula" class="bg-[#1B365D] text-white px-6 py-2 rounded text-sm font-bold shadow">儲存公式</button>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
-                <div class="p-3 bg-gray-50 border-b flex items-center justify-between">
-                    <span class="font-bold text-sm text-gray-700">公式清單</span>
-                    <input type="text" id="filter-formulas" placeholder="模糊篩選..." class="border rounded p-1.5 text-sm w-64">
-                </div>
-                <table class="w-full data-table text-sm"><thead><tr><th>對應藥品</th><th>方法名稱</th><th>公式內容</th><th>單次/單日上限</th><th>操作</th></tr></thead><tbody id="list-formulas"></tbody></table>
             </div>
         </section>
     </main>
