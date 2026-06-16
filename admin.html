@@ -7,8 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./assets/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen bg-gray-50">
     <header class="bg-gray-800 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -16,16 +17,80 @@
                 <h1 class="text-xl font-bold">後台維護中心 - 視覺化公式編輯器</h1>
             </div>
             <a href="./index.html" class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded transition">
-                返回計算機
+                <i class="fa-solid fa-arrow-left mr-1"></i>返回計算機
             </a>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
-        <div class="bg-white p-10 rounded-lg shadow-sm border border-gray-100 text-center text-gray-500">
-            <i class="fa-solid fa-wrench text-5xl mb-4 text-gray-300"></i>
-            <h2 class="text-xl font-bold text-gray-700">後台模組建置中</h2>
-            <p class="mt-2">我們將在第四階段完成這裡的「參數點選帶入」與「安全計算測試」功能。</p>
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 py-6 flex flex-col gap-6">
+        
+        <section class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+            <h2 class="text-[#1B365D] font-bold border-b pb-2 mb-4"><i class="fa-solid fa-1 mr-2"></i>第一步：選擇對應藥品與設定</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">對應藥品 <span class="text-red-500">*</span></label>
+                    <select id="admin-drug-select" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#1B365D]">
+                        <option value="">載入中...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">計算方法名稱 <span class="text-red-500">*</span></label>
+                    <input type="text" id="admin-formula-name" placeholder="例如：標準體重(男)" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#1B365D]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">計算結果單位 <span class="text-red-500">*</span></label>
+                    <input type="text" id="admin-result-unit" placeholder="例如：mg, ml, kg" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#1B365D]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">備註 / 臨床指引提醒</label>
+                    <input type="text" id="admin-remark" placeholder="例如：適用於成人/大童" class="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#1B365D]">
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+            <h2 class="text-[#1B365D] font-bold border-b pb-2 mb-4"><i class="fa-solid fa-2 mr-2"></i>第二步：視覺化組裝公式</h2>
+            
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="w-full md:w-1/3 bg-gray-50 p-4 rounded border border-gray-200">
+                    <h3 class="text-xs font-bold text-gray-700 mb-3">1. 點選帶入臨床參數</h3>
+                    <div id="admin-param-pad" class="flex flex-wrap gap-2 mb-4">
+                        <span class="text-xs text-gray-400">載入參數中...</span>
+                    </div>
+
+                    <h3 class="text-xs font-bold text-gray-700 mb-2">2. 基礎運算子</h3>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" class="op-btn bg-white border border-gray-300 rounded py-1 hover:bg-gray-100 font-bold">+</button>
+                        <button type="button" class="op-btn bg-white border border-gray-300 rounded py-1 hover:bg-gray-100 font-bold">-</button>
+                        <button type="button" class="op-btn bg-white border border-gray-300 rounded py-1 hover:bg-gray-100 font-bold">*</button>
+                        <button type="button" class="op-btn bg-white border border-gray-300 rounded py-1 hover:bg-gray-100 font-bold">/</button>
+                        <button type="button" class="op-btn bg-white border border-gray-300 rounded py-1 hover:bg-gray-100 font-bold">(</button>
+                        <button type="button" class="op-btn bg-white border border-gray-300 rounded py-1 hover:bg-gray-100 font-bold">)</button>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-2/3 flex flex-col gap-2">
+                    <label class="block text-xs font-bold text-gray-700">公式內容區</label>
+                    <textarea id="admin-formula-string" rows="5" class="w-full border border-gray-300 rounded p-3 text-sm focus:border-[#1B365D] font-mono" placeholder="請點左側參數與符號組裝公式..."></textarea>
+                    
+                    <div class="mt-2 p-3 bg-blue-50 border border-blue-100 rounded">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-[#1B365D]">即時安全運算測試</span>
+                            <button id="btn-generate-test" class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">產生測試欄位</button>
+                        </div>
+                        <div id="admin-test-inputs" class="grid grid-cols-2 gap-2 mb-2"></div>
+                        <div class="text-sm">
+                            計算結果：<span id="admin-test-result" class="font-bold text-lg text-[#1B365D]">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="flex justify-end gap-3">
+            <button id="btn-save-formula" class="bg-[#1B365D] text-white px-6 py-2 rounded font-bold hover:bg-blue-900 shadow transition flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> 儲存寫入資料庫
+            </button>
         </div>
     </main>
 
