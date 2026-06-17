@@ -340,7 +340,12 @@ async function saveDrug() {
         other_forms: stateTags.otherForms.join(','), related_drugs: stateTags.relatedDrugs.join(',')
     };
     ['cat1','cat2','cat3','local','brand','common-brand','generic','ingred','dose-inst','url','form'].forEach(id => p[id.replace('-','_') + (id.includes('brand')||id==='local'||id==='generic'?'_name':'')] = document.getElementById(`drug-${id}`).value);
-    if(!p.cat_1 || !p.local_name || !p.generic_name) return alert("必填欄位空白");
+    
+    // 【修改處】更新必填欄位的判斷邏輯
+    if(!p.cat_1 || !p.drug_code || !p.generic_name || !p.can_crush || !p.form) {
+        return alert("請填寫所有帶有 * 號的必填欄位！\n(第一層分類、藥品代碼、一般名稱、是否可磨粉、主要劑型)");
+    }
+    
     await sendPost(p); resetDrugForm();
 }
 
