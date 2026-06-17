@@ -34,11 +34,13 @@
         </div>
     </div>
 
-    <aside class="w-64 bg-[#1B365D] text-white flex flex-col shadow-xl">
+    <aside class="w-64 bg-[#1B365D] text-white flex flex-col shadow-xl flex-shrink-0">
         <div class="p-5 border-b border-white/20"><h1 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-server text-blue-300"></i>智能運管後台</h1><p class="text-xs text-blue-200 mt-1" id="current-user-info">載入中...</p></div>
-        <nav class="flex-grow py-4"><ul class="flex flex-col">
+        <nav class="flex-grow py-4 overflow-y-auto"><ul class="flex flex-col">
             <li class="nav-item active px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="dashboard"><i class="fa-solid fa-house w-5"></i> 系統主畫面</li>
+            <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="announcements"><i class="fa-solid fa-bullhorn w-5"></i> 系統公告維護</li>
             <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="staff"><i class="fa-solid fa-user-doctor w-5"></i> 管理藥師清單</li>
+            <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="categories"><i class="fa-solid fa-layer-group w-5"></i> 分類基本檔維護</li>
             <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="params"><i class="fa-solid fa-tags w-5"></i> 參數基本檔維護</li>
             <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3" data-target="drugs"><i class="fa-solid fa-pills w-5"></i> 藥品基本檔維護</li>
             <li class="nav-item px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3 hidden" id="nav-formulas" data-target="formulas"><i class="fa-solid fa-flask w-5"></i> 公式編輯區</li>
@@ -49,6 +51,7 @@
     </aside>
 
     <main class="flex-grow p-8 overflow-y-auto w-[calc(100%-16rem)]">
+        
         <section id="dashboard" class="tab-content active">
             <h2 class="text-2xl font-bold text-gray-800 mb-6">歡迎回來，<span id="dash-name">管理員</span></h2>
             <div class="grid grid-cols-4 gap-4">
@@ -56,6 +59,29 @@
                 <div class="bg-white p-5 rounded border-t-4 border-t-green-500 shadow-sm"><div class="text-xs text-gray-500 font-bold">已建立公式數</div><div class="text-2xl font-extrabold text-[#1B365D]" id="stat-formulas">--</div></div>
                 <div class="bg-white p-5 rounded border-t-4 border-t-purple-500 shadow-sm"><div class="text-xs text-gray-500 font-bold">維護參數總數</div><div class="text-2xl font-extrabold text-[#1B365D]" id="stat-params">--</div></div>
                 <div class="bg-white p-5 rounded border-t-4 border-t-orange-500 shadow-sm"><div class="text-xs text-gray-500 font-bold">授權藥師人數</div><div class="text-2xl font-extrabold text-[#1B365D]" id="stat-staff">--</div></div>
+            </div>
+        </section>
+
+        <section id="announcements" class="tab-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">系統公告維護</h2>
+            <div class="bg-white p-5 rounded-lg shadow-sm border mb-6 max-w-4xl">
+                <input type="hidden" id="anno-mode" value="add"><input type="hidden" id="anno-id">
+                <div class="grid grid-cols-4 gap-4 mb-3">
+                    <div><label class="block text-xs font-bold mb-1">版本號 *</label><input type="text" id="anno-version" placeholder="如: v1.0.1" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-bold mb-1">發布日期 *</label><input type="date" id="anno-date" class="w-full border rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-bold mb-1">是否置頂 (首頁顯示)</label><select id="anno-pinned" class="w-full border rounded p-2 text-sm"><option value="N">N - 否</option><option value="Y">Y - 是</option></select></div>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-bold mb-1">公告內容 (多行) *</label><textarea id="anno-content" rows="3" class="w-full border rounded p-2 text-sm"></textarea>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-save-anno" class="bg-[#1B365D] text-white px-4 py-2 rounded text-sm font-bold">新增公告</button>
+                    <button id="btn-cancel-anno" class="hidden bg-gray-400 text-white px-4 py-2 rounded text-sm font-bold">取消編輯</button>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div class="p-3 bg-gray-50 border-b flex items-center justify-between"><span class="font-bold text-sm text-gray-700">歷史公告清單</span></div>
+                <table class="w-full data-table text-sm"><thead><tr><th>置頂</th><th>版本</th><th>發布日期</th><th>公告內容</th><th>操作</th></tr></thead><tbody id="list-announcements"></tbody></table>
             </div>
         </section>
 
@@ -73,6 +99,26 @@
             <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
                 <div class="p-3 bg-gray-50 border-b flex items-center justify-between"><span class="font-bold text-sm text-gray-700">藥師清單</span><input type="text" id="filter-staff" placeholder="模糊搜尋..." class="border rounded p-1.5 text-sm w-64"></div>
                 <table class="w-full data-table text-sm"><thead><tr><th>員工編號</th><th>姓名</th><th>權限</th><th>狀態</th><th>操作</th></tr></thead><tbody id="list-staff"></tbody></table>
+            </div>
+        </section>
+
+        <section id="categories" class="tab-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">分類基本檔維護 (供藥品下拉選擇)</h2>
+            <div class="bg-white p-5 rounded-lg shadow-sm border mb-6 max-w-3xl">
+                <input type="hidden" id="cat-mode" value="add"><input type="hidden" id="cat-id">
+                <div class="grid grid-cols-3 gap-4 mb-3">
+                    <div><label class="block text-xs font-bold mb-1 text-blue-600">第一層分類 *</label><input type="text" id="cat-level1" class="w-full border rounded p-2 text-sm" placeholder="如: 抗生素"></div>
+                    <div><label class="block text-xs font-bold mb-1 text-blue-600">第二層分類</label><input type="text" id="cat-level2" class="w-full border rounded p-2 text-sm" placeholder="如: 青黴素"></div>
+                    <div><label class="block text-xs font-bold mb-1 text-blue-600">第三層分類</label><input type="text" id="cat-level3" class="w-full border rounded p-2 text-sm" placeholder="如: 口服製劑"></div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-save-cat" class="bg-[#1B365D] text-white px-4 py-2 rounded text-sm font-bold">新增分類組合</button>
+                    <button id="btn-cancel-cat" class="hidden bg-gray-400 text-white px-4 py-2 rounded text-sm font-bold">取消編輯</button>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div class="p-3 bg-gray-50 border-b flex items-center justify-between"><span class="font-bold text-sm text-gray-700">分類清單</span><input type="text" id="filter-cats" placeholder="搜尋分類..." class="border rounded p-1.5 text-sm w-64"></div>
+                <table class="w-full data-table text-sm"><thead><tr><th>第一層</th><th>第二層</th><th>第三層</th><th>操作</th></tr></thead><tbody id="list-categories"></tbody></table>
             </div>
         </section>
 
@@ -100,16 +146,24 @@
             <h2 class="text-2xl font-bold text-gray-800 mb-4">藥品基本檔維護</h2>
             <div class="bg-white p-5 rounded-lg shadow-sm border mb-6">
                 <input type="hidden" id="drug-mode" value="add"><input type="hidden" id="drug-id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 bg-blue-50 p-3 rounded border border-blue-100">
+                    <div><label class="block text-xs font-bold mb-1 text-blue-800">第一層分類 *</label><select id="drug-cat1" class="w-full border rounded p-2 text-sm bg-white"><option value="">--請選擇--</option></select></div>
+                    <div><label class="block text-xs font-bold mb-1 text-blue-800">第二層分類</label><select id="drug-cat2" class="w-full border rounded p-2 text-sm bg-white" disabled><option value="">--請選擇--</option></select></div>
+                    <div><label class="block text-xs font-bold mb-1 text-blue-800">第三層分類</label><select id="drug-cat3" class="w-full border rounded p-2 text-sm bg-white" disabled><option value="">--請選擇--</option></select></div>
+                    <div><label class="block text-xs font-bold mb-1">狀態</label><select id="drug-status" class="w-full border rounded p-2 text-sm bg-white"><option value="Y">啟用</option><option value="N">停用</option></select></div>
+                </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
-                    <div><label class="block text-xs font-bold mb-1 text-blue-600">第一層分類 *</label><input type="text" id="drug-cat1" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-bold mb-1 text-blue-600">第二層分類</label><input type="text" id="drug-cat2" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-bold mb-1 text-blue-600">第三層分類</label><input type="text" id="drug-cat3" class="w-full border rounded p-2 text-sm"></div>
-                    <div><label class="block text-xs font-bold mb-1">狀態</label><select id="drug-status" class="w-full border rounded p-2 text-sm"><option value="Y">啟用</option><option value="N">停用</option></select></div>
-                    
                     <div><label class="block text-xs font-bold mb-1">中文名稱 *</label><input type="text" id="drug-local" class="w-full border rounded p-2 text-sm"></div>
                     <div><label class="block text-xs font-bold mb-1">商品名稱</label><input type="text" id="drug-brand" class="w-full border rounded p-2 text-sm"></div>
                     <div><label class="block text-xs font-bold mb-1">常用商品名稱</label><input type="text" id="drug-common-brand" class="w-full border rounded p-2 text-sm"></div>
                     <div><label class="block text-xs font-bold mb-1">一般名稱 (原學名) *</label><input type="text" id="drug-generic" class="w-full border rounded p-2 text-sm"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div><label class="block text-xs font-bold mb-1 text-indigo-700">劑型</label><input type="text" id="drug-form" placeholder="例如：口服懸液劑" class="w-full border border-indigo-200 rounded p-2 text-sm"></div>
+                    <div><label class="block text-xs font-bold mb-1 text-indigo-700">是否存在其他劑型</label><input type="text" id="drug-other-forms" placeholder="例如：錠劑、膠囊" class="w-full border border-indigo-200 rounded p-2 text-sm"></div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
@@ -139,20 +193,13 @@
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <button onclick="document.querySelector('[data-target=\'drugs\']').click()" class="text-sm text-blue-600 hover:text-blue-800 mb-1 inline-block"><i class="fa-solid fa-arrow-left"></i> 返回藥品清單</button>
-                    <h2 class="text-2xl font-bold text-gray-800">
-                        <span id="formula-context-name" class="text-[#1B365D]">藥品名稱</span> 的專屬公式
-                    </h2>
+                    <h2 class="text-2xl font-bold text-gray-800"><span id="formula-context-name" class="text-[#1B365D]">藥品名稱</span> 的專屬公式</h2>
                 </div>
-                <button id="btn-show-add-formula" class="bg-[#1B365D] text-white px-5 py-2 rounded font-bold hover:bg-blue-900 shadow">
-                    <i class="fa-solid fa-plus"></i> 新增公式
-                </button>
+                <button id="btn-show-add-formula" class="bg-[#1B365D] text-white px-5 py-2 rounded font-bold hover:bg-blue-900 shadow"><i class="fa-solid fa-plus"></i> 新增公式</button>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
-                <table class="w-full data-table text-sm">
-                    <thead><tr><th>方法名稱</th><th>區間公式 (點擊編輯)</th><th>絕對最大劑量上限</th><th>操作</th></tr></thead>
-                    <tbody id="list-local-formulas"></tbody>
-                </table>
+                <table class="w-full data-table text-sm"><thead><tr><th>方法名稱</th><th>區間公式 (點擊編輯)</th><th>絕對最大劑量上限</th><th>操作</th></tr></thead><tbody id="list-local-formulas"></tbody></table>
             </div>
 
             <div id="formula-editor-container" class="bg-white p-5 rounded-lg shadow-xl border border-blue-200 hidden relative">
@@ -170,39 +217,25 @@
                     <div class="w-full md:w-1/3 bg-gray-50 p-3 border rounded">
                         <div class="text-xs text-blue-800 mb-2 font-bold"><i class="fa-solid fa-hand-pointer mr-1"></i>請先點擊右側輸入框，再點參數帶入</div>
                         <div id="admin-param-pad" class="flex flex-wrap gap-1 mb-2"></div>
-                        <div class="grid grid-cols-4 gap-1">
-                            <button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">+</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">-</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">*</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">/</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">(</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">)</button>
-                        </div>
+                        <div class="grid grid-cols-4 gap-1"><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">+</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">-</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">*</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">/</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">(</button><button class="op-btn bg-white border rounded text-xs py-1 font-bold shadow-sm hover:bg-gray-100">)</button></div>
                     </div>
                     
                     <div class="w-full md:w-2/3 flex flex-col gap-3">
                         <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold mb-1 text-blue-700">下限公式 (Min) *</label>
-                                <textarea id="admin-formula-min" rows="2" class="w-full border rounded p-2 text-sm font-mono focus:border-blue-500 focus:bg-blue-50" placeholder="例如：{weight} * 1.5"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold mb-1 text-blue-700">上限公式 (Max) (若固定則免填)</label>
-                                <textarea id="admin-formula-max" rows="2" class="w-full border rounded p-2 text-sm font-mono focus:border-blue-500 focus:bg-blue-50" placeholder="例如：{weight} * 2"></textarea>
-                            </div>
+                            <div><label class="block text-xs font-bold mb-1 text-blue-700">下限公式 (Min) *</label><textarea id="admin-formula-min" rows="2" class="w-full border rounded p-2 text-sm font-mono focus:border-blue-500 focus:bg-blue-50" placeholder="例如：{weight} * 1.5"></textarea></div>
+                            <div><label class="block text-xs font-bold mb-1 text-blue-700">上限公式 (Max) (若固定則免填)</label><textarea id="admin-formula-max" rows="2" class="w-full border rounded p-2 text-sm font-mono focus:border-blue-500 focus:bg-blue-50" placeholder="例如：{weight} * 2"></textarea></div>
                         </div>
-                        
                         <div class="grid grid-cols-4 gap-2 bg-red-50 p-2 rounded border border-red-100 mt-1">
                             <div><label class="block text-[10px] font-bold text-red-700">單次絕對上限</label><input type="number" step="any" id="formula-single-max" class="w-full border rounded p-1 text-xs"></div>
                             <div><label class="block text-[10px] font-bold text-red-700">單次單位</label><input type="text" id="formula-single-unit" class="w-full border rounded p-1 text-xs"></div>
                             <div><label class="block text-[10px] font-bold text-red-700">單日絕對上限</label><input type="number" step="any" id="formula-daily-max" class="w-full border rounded p-1 text-xs"></div>
                             <div><label class="block text-[10px] font-bold text-red-700">單日單位</label><input type="text" id="formula-daily-unit" class="w-full border rounded p-1 text-xs"></div>
                         </div>
-
                         <div class="p-3 bg-blue-50 border border-blue-100 rounded text-xs mt-1">
                             <div id="admin-test-inputs" class="grid grid-cols-3 gap-2 mb-2 border-b border-blue-200 pb-2">請先輸入公式</div>
-                            <div class="flex items-center gap-2 mt-2">
-                                區間結果：<span id="admin-test-result" class="font-bold text-xl text-[#1B365D]">-- ~ --</span>
-                            </div>
+                            <div class="flex items-center gap-2 mt-2">區間結果：<span id="admin-test-result" class="font-bold text-xl text-[#1B365D]">-- ~ --</span></div>
                         </div>
-                        <div class="flex justify-end gap-2 mt-1">
-                            <button id="btn-save-formula" class="bg-[#1B365D] text-white px-6 py-2 rounded text-sm font-bold shadow hover:bg-blue-900 transition">儲存區間公式</button>
-                        </div>
+                        <div class="flex justify-end gap-2 mt-1"><button id="btn-save-formula" class="bg-[#1B365D] text-white px-6 py-2 rounded text-sm font-bold shadow hover:bg-blue-900 transition">儲存區間公式</button></div>
                     </div>
                 </div>
             </div>
