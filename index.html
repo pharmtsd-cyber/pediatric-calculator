@@ -73,7 +73,13 @@
 
             <div id="calc-panel" class="hidden flex flex-col gap-4">
                 <div class="bg-gray-50 p-5 rounded border border-gray-200 relative shadow-sm">
-                    <div class="flex gap-1 mb-3" id="drug-right-cats"></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex gap-1" id="drug-right-cats"></div>
+                        <div class="flex gap-2">
+                            <span id="drug-badge-crush" class="hidden text-[10px] font-bold px-2 py-0.5 rounded border"></span>
+                            <span id="drug-badge-code" class="hidden bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded"></span>
+                        </div>
+                    </div>
                     <h3 id="drug-title" class="text-xl font-bold text-[#1B365D] mb-3 leading-tight pr-24">學名</h3>
                     
                     <div class="text-xs text-gray-600 flex flex-col gap-2 border-t border-gray-200 pt-3">
@@ -81,8 +87,12 @@
                         <div class="flex"><span class="w-24 font-bold text-gray-500">中文商品名</span><span id="drug-sub2" class="font-medium text-gray-800">--</span></div>
                         <div class="flex"><span class="w-24 font-bold text-gray-500">原廠商品名</span><span id="drug-sub3" class="font-medium text-gray-800">--</span></div>
                     </div>
-                    <a id="drug-url-btn" href="#" target="_blank" class="hidden absolute top-5 right-5 text-xs bg-purple-100 text-purple-700 px-3 py-1.5 rounded border border-purple-200 hover:bg-purple-200 transition shadow-sm font-bold">
-                        <i class="fa-solid fa-link"></i> 仿單連結
+                    <div id="drug-related-container" class="hidden mt-3 pt-3 border-t border-gray-200 text-xs">
+                        <span class="font-bold text-teal-700 block mb-1"><i class="fa-solid fa-link text-teal-500"></i> 關聯藥品：</span>
+                        <div id="drug-related-list" class="flex flex-wrap gap-1"></div>
+                    </div>
+                    <a id="drug-url-btn" href="#" target="_blank" class="hidden absolute top-12 right-5 text-xs bg-purple-100 text-purple-700 px-3 py-1.5 rounded border border-purple-200 hover:bg-purple-200 transition shadow-sm font-bold">
+                        <i class="fa-solid fa-file-medical"></i> 仿單連結
                     </a>
                 </div>
 
