@@ -166,8 +166,24 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                     <div><label class="block text-xs font-bold mb-1 text-indigo-700">主要劑型 (單選)</label><select id="drug-form" class="w-full border border-indigo-200 rounded p-2 text-sm"><option value="">--請選擇--</option></select></div>
-                    <div><label class="block text-xs font-bold mb-1 text-indigo-700">其他劑型 (按住 Ctrl 可多選)</label><select id="drug-other-forms" multiple class="w-full border border-indigo-200 rounded p-2 text-sm h-20"></select></div>
-                    <div><label class="block text-xs font-bold mb-1 text-teal-700">關聯藥品 (按住 Ctrl 可多選)</label><select id="drug-related" multiple class="w-full border border-teal-200 rounded p-2 text-sm h-20"></select></div>
+                    
+                    <div class="relative">
+                        <label class="block text-xs font-bold mb-1 text-indigo-700">其他劑型 (搜尋後點擊加入)</label>
+                        <div class="border border-indigo-200 rounded p-1.5 min-h-[38px] flex flex-wrap gap-1 bg-white items-start focus-within:border-[#1B365D] transition">
+                            <div id="tags-otherForms" class="flex flex-wrap gap-1 empty:hidden"></div>
+                            <input type="text" id="input-otherForms" class="flex-grow min-w-[60px] outline-none text-sm p-1 bg-transparent" placeholder="搜尋劑型..." autocomplete="off">
+                        </div>
+                        <div id="drop-otherForms" class="hidden absolute top-full left-0 w-full bg-white border border-gray-300 shadow-xl rounded mt-1 max-h-48 overflow-y-auto z-50"></div>
+                    </div>
+                    
+                    <div class="relative">
+                        <label class="block text-xs font-bold mb-1 text-teal-700">關聯藥品 (搜尋後點擊加入)</label>
+                        <div class="border border-teal-200 rounded p-1.5 min-h-[38px] flex flex-wrap gap-1 bg-white items-start focus-within:border-[#1B365D] transition">
+                            <div id="tags-relatedDrugs" class="flex flex-wrap gap-1 empty:hidden"></div>
+                            <input type="text" id="input-relatedDrugs" class="flex-grow min-w-[60px] outline-none text-sm p-1 bg-transparent" placeholder="搜尋藥品..." autocomplete="off">
+                        </div>
+                        <div id="drop-relatedDrugs" class="hidden absolute top-full left-0 w-full bg-white border border-gray-300 shadow-xl rounded mt-1 max-h-48 overflow-y-auto z-50"></div>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
