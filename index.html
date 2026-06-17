@@ -35,11 +35,28 @@
             <h2 class="text-base font-bold text-[#1B365D] border-b pb-2 flex items-center gap-2">
                 <i class="fa-solid fa-magnifying-glass"></i>藥品篩選器
             </h2>
+            
+            <div class="flex flex-col gap-2 bg-blue-50/50 p-3 rounded border border-blue-100">
+                <label class="text-xs font-bold text-blue-800 flex items-center gap-1">
+                    <i class="fa-solid fa-layer-group"></i> 分類層級篩選
+                </label>
+                <select id="filter-cat1" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] bg-white">
+                    <option value="">-- 所有第一層分類 --</option>
+                </select>
+                <select id="filter-cat2" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] disabled:bg-gray-100 bg-white" disabled>
+                    <option value="">-- 所有第二層分類 --</option>
+                </select>
+                <select id="filter-cat3" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] disabled:bg-gray-100 bg-white" disabled>
+                    <option value="">-- 所有第三層分類 --</option>
+                </select>
+            </div>
+
             <div class="relative">
-                <input type="text" id="search-input" placeholder="輸入分類/學名/商品名/中文名..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#1B365D] text-sm">
+                <input type="text" id="search-input" placeholder="模糊搜尋 (學名/各類商品名)..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#1B365D] text-sm">
                 <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
             </div>
-            <div class="flex-grow overflow-y-auto max-h-[400px] md:max-h-[600px]" id="category-tree">
+            
+            <div class="flex-grow overflow-y-auto max-h-[400px] md:max-h-[600px] pr-1" id="category-tree">
                 <p class="text-xs text-gray-400 italic text-center py-4" id="loading-status">準備從雲端載入藥品資料庫...</p>
             </div>
         </section>
@@ -55,14 +72,17 @@
             </div>
 
             <div id="calc-panel" class="hidden flex flex-col gap-4">
-                <div class="bg-gray-50 p-4 rounded border border-gray-200 relative">
-                    <h3 id="drug-title" class="text-lg font-bold text-[#1B365D] mb-1">藥品名稱</h3>
-                    <div class="text-xs text-gray-500 flex flex-col gap-1">
-                        <span id="drug-generic">學名：--</span>
-                        <span id="drug-brand">商品名：--</span>
+                <div class="bg-gray-50 p-5 rounded border border-gray-200 relative shadow-sm">
+                    <div class="flex gap-1 mb-3" id="drug-right-cats"></div>
+                    <h3 id="drug-title" class="text-xl font-bold text-[#1B365D] mb-3 leading-tight pr-24">學名</h3>
+                    
+                    <div class="text-xs text-gray-600 flex flex-col gap-2 border-t border-gray-200 pt-3">
+                        <div class="flex"><span class="w-24 font-bold text-gray-500">現有商品名</span><span id="drug-sub1" class="font-medium text-gray-800">--</span></div>
+                        <div class="flex"><span class="w-24 font-bold text-gray-500">中文商品名</span><span id="drug-sub2" class="font-medium text-gray-800">--</span></div>
+                        <div class="flex"><span class="w-24 font-bold text-gray-500">原廠商品名</span><span id="drug-sub3" class="font-medium text-gray-800">--</span></div>
                     </div>
-                    <a id="drug-url-btn" href="#" target="_blank" class="hidden absolute top-4 right-4 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 hover:bg-purple-200 transition">
-                        <i class="fa-solid fa-link"></i> 參考仿單
+                    <a id="drug-url-btn" href="#" target="_blank" class="hidden absolute top-5 right-5 text-xs bg-purple-100 text-purple-700 px-3 py-1.5 rounded border border-purple-200 hover:bg-purple-200 transition shadow-sm font-bold">
+                        <i class="fa-solid fa-link"></i> 仿單連結
                     </a>
                 </div>
 
@@ -73,7 +93,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1.5">請選擇臨床適應症 / 年齡段 / 計算方法：</label>
-                    <select id="formula-select" class="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D]"></select>
+                    <select id="formula-select" class="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] bg-white"></select>
                     <p id="formula-remark" class="text-xs text-blue-600 mt-1 italic"></p>
                 </div>
 
@@ -98,7 +118,7 @@
                             <i class="fa-solid fa-user-doctor mr-1"></i>醫師開立處方劑量比對 (選填)
                         </label>
                         <div class="flex items-center gap-2">
-                            <input type="number" id="prescribed-dose" step="any" placeholder="輸入處方數字..." class="border border-blue-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] w-48 shadow-inner">
+                            <input type="number" id="prescribed-dose" step="any" placeholder="輸入處方數字..." class="border border-blue-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] w-48 shadow-inner bg-white">
                             <span class="text-sm font-bold text-gray-600 prescribed-unit-display"></span>
                         </div>
                         <div id="dose-eval-msg" class="text-sm font-bold mt-2 hidden flex items-center gap-1.5 p-2 rounded"></div>
