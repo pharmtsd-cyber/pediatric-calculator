@@ -20,7 +20,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 【新增】檢查免登入狀態
+    checkAutoLogin();
 });
+
+async function checkAutoLogin() {
+    const savedUser = localStorage.getItem('pharma_user');
+    if (savedUser) {
+        try {
+            CURRENT_USER = JSON.parse(savedUser);
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('dash-name').innerText = CURRENT_USER.name;
+            document.getElementById('current-user-info').innerText = `${CURRENT_USER.name} (${CURRENT_USER.role})`;
+            
+            if (CURRENT_USER.role !== 'Admin' && CURRENT_USER.role !== 'Programmer') {
+                document.getElementById('btn-save-staff').disabled = true; 
+                document.getElementById('btn-save-staff').classList.replace('bg-[#1B365D]', 'bg-gray-400');
+            }
+            
+            await loadAllData();
+            handleUrlJump();
+        } catch(e) {
+            localStorage.removeItem('pharma_user');
+        }
+    }
+}
 
 async function handleLogin() {
     const id = document.getElementById('login-id').value.trim(), pw = document.getElementById('login-pw').value, msg = document.getElementById('login-msg');
@@ -31,24 +56,39 @@ async function handleLogin() {
         const result = await response.json();
         if (result.status === "success") {
             CURRENT_USER = result;
+            localStorage.setItem('pharma_user', JSON.stringify(CURRENT_USER)); // 儲存登入狀態
+            
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('dash-name').innerText = CURRENT_USER.name;
-            
+            document.getElementById('current-user-info').innerText = `${CURRENT_USER.name} (${CURRENT_USER.role})`;
             if (CURRENT_USER.role !== 'Admin' && CURRENT_USER.role !== 'Programmer') {
                 document.getElementById('btn-save-staff').disabled = true; document.getElementById('btn-save-staff').classList.replace('bg-[#1B365D]', 'bg-gray-400');
             }
+            
             await loadAllData();
-
-            // 【跳轉檢查】如果前台帶了 drug_id 來，自動切換到藥品頁面並開啟該藥品
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('drug_id')) {
-                const targetTab = document.querySelector('[data-target="drugs"]');
-                if(targetTab) targetTab.click();
-                if(typeof window.viewDrug === 'function') window.viewDrug(urlParams.get('drug_id'));
-            }
+            handleUrlJump();
         } else msg.innerText = result.message;
     } catch(e) { msg.innerText = "網路連線異常"; } finally { btn.innerText = "登入系統"; btn.disabled = false; }
 }
+
+// 【新增】處理跳轉並清除網址參數
+function handleUrlJump() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('drug_id')) {
+        const targetTab = document.querySelector('[data-target="drugs"]');
+        if(targetTab) targetTab.click();
+        if(typeof window.viewDrug === 'function') window.viewDrug(urlParams.get('drug_id'));
+        
+        // 關鍵：跳轉完成後立刻把網址清乾淨，才不會造成重複渲染或清單消失
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+// 【新增】登出功能
+window.logout = function() {
+    localStorage.removeItem('pharma_user');
+    window.location.reload();
+};
 
 async function loadAllData() {
     try {
@@ -66,7 +106,6 @@ async function loadAllData() {
         document.getElementById('stat-params').innerText = STORE.parameters.length;
         document.getElementById('stat-staff').innerText = STORE.staff.length;
 
-        // 呼叫其他模組的初始化與渲染函數
         if(typeof setupDrugListFilters === 'function') setupDrugListFilters();
         if(typeof renderSystemLists === 'function') renderSystemLists();
         if(typeof renderDrugsList === 'function') renderDrugsList();
