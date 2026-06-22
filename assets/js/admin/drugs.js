@@ -1,15 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById('btn-save-drug')) document.getElementById('btn-save-drug').onclick = saveDrug;
     if(document.getElementById('btn-cancel-drug')) document.getElementById('btn-cancel-drug').onclick = resetDrugForm;
-    if(document.getElementById('filter-drugs')) document.getElementById('filter-drugs').addEventListener('input', renderDrugsList);
+    // 【修改】將搜尋監聽器綁到 Dashboard 裡面的搜尋框
+    if(document.getElementById('filter-dash-drugs')) document.getElementById('filter-dash-drugs').addEventListener('input', renderDrugsList);
 });
 
 window.setupDrugListFilters = function() {
     const lc1 = document.getElementById('list-cat1'), lc2 = document.getElementById('list-cat2'), lc3 = document.getElementById('list-cat3');
     if(!lc1) return;
     const cat1s = [...new Set(STORE.categories.map(c => c.cat_1).filter(Boolean))];
-    lc1.innerHTML = '<option value="">-- 第一層分類篩選 --</option>'; 
-    cat1s.forEach(c => lc1.add(new Option(c, c)));
+    lc1.innerHTML = '<option value="">-- 第一層分類篩選 --</option>'; cat1s.forEach(c => lc1.add(new Option(c, c)));
     
     lc1.addEventListener('change', () => {
         lc2.innerHTML = '<option value="">-- 第二層分類篩選 --</option>'; lc3.innerHTML = '<option value="">-- 第三層分類篩選 --</option>';
@@ -25,16 +25,16 @@ window.setupDrugListFilters = function() {
         if (lc2.value) {
             const cat3s = [...new Set(STORE.categories.filter(c => c.cat_1 === lc1.value && c.cat_2 === lc2.value).map(c => c.cat_3).filter(Boolean))];
             cat3s.forEach(c => lc3.add(new Option(c, c))); lc3.disabled = false;
-        } else lc3.disabled = true;
-        renderDrugsList();
+        } else lc3.disabled = true; renderDrugsList();
     });
     
     lc3.addEventListener('change', renderDrugsList);
 };
 
 window.renderDrugsList = function() {
-    if (!document.getElementById('list-drugs')) return;
-    const fDrugs = document.getElementById('filter-drugs').value.toLowerCase();
+    // 【修改】渲染到 dashboard 的清單中
+    if (!document.getElementById('list-dash-drugs')) return;
+    const fDrugs = document.getElementById('filter-dash-drugs').value.toLowerCase();
     const lc1 = document.getElementById('list-cat1').value, lc2 = document.getElementById('list-cat2').value, lc3 = document.getElementById('list-cat3');
 
     const filteredDrugs = STORE.drugs.filter(d => {
@@ -48,24 +48,38 @@ window.renderDrugsList = function() {
         return true;
     });
 
-    document.getElementById('drug-list-count').innerText = filteredDrugs.length;
+    document.getElementById('dash-drug-count').innerText = filteredDrugs.length;
 
-    document.getElementById('list-drugs').innerHTML = filteredDrugs.map(d => {
+    // 【修改】點擊整列直接跳轉去觀看藥品
+    document.getElementById('list-dash-drugs').innerHTML = filteredDrugs.map(d => {
         const dom = d.domain || 'PED';
         let domText = dom === 'NICU' ? '新生兒 ICU' : (dom === 'ADU' ? '成人抗生素' : '小兒科');
         let domColor = dom === 'NICU' ? 'bg-pink-100 text-pink-800' : (dom === 'ADU' ? 'bg-gray-200 text-gray-800' : 'bg-blue-100 text-blue-800');
         
-        return `<tr class="cursor-pointer hover:bg-blue-50 transition" onclick="viewDrug('${d.drug_id}')">
+        return `<tr class="cursor-pointer hover:bg-blue-50 transition" onclick="goToDrugView('${d.drug_id}')">
             <td><span class="${domColor} text-[10px] px-2 py-0.5 rounded font-bold">${domText}</span></td>
             <td><div class="font-bold text-orange-600 mb-1">${d.drug_code||'--'}</div><span class="bg-blue-100 text-blue-800 text-[10px] px-1 rounded">${d.cat_1||''}</span>${d.cat_2 ? `<i class="fa-solid fa-angle-right text-[10px] mx-1 text-gray-400"></i><span class="bg-blue-50 text-blue-800 text-[10px] px-1 rounded">${d.cat_2}</span>` : ''}</td>
             <td><div class="font-bold text-blue-900">${d.generic_name||'無學名'}</div><div class="text-[10px] text-gray-500">${d.local_name||''} ${d.common_brand?'('+d.common_brand+')':''}</div></td>
             <td><span class="${d.status==='Y'?'text-green-600':'text-red-500'} font-bold">${d.status}</span></td>
-            <td onclick="event.stopPropagation()">
-                <button onclick="openFormulaManager('${d.drug_id}')" class="text-purple-600 hover:text-purple-800 mr-3 font-bold text-xs bg-purple-50 px-2 py-1 rounded border border-purple-200" title="管理專屬公式"><i class="fa-solid fa-flask"></i> 公式 (${STORE.formulas.filter(f => f.drug_id === d.drug_id).length})</button>
-                <button onclick="deleteRecord('deleteDrug', '${d.drug_id}')" class="text-red-500 hover:text-red-700" title="刪除藥品"><i class="fa-solid fa-trash"></i></button>
-            </td>
         </tr>`;
     }).join('');
+};
+
+// 【新增】從其他分頁點擊跳轉到藥品檢視畫面
+window.goToDrugView = function(drugId) {
+    const tab = document.querySelector('[data-target="drugs"]');
+    if(tab) tab.click();
+    viewDrug(drugId);
+};
+
+// 【新增】點擊公式直接跳轉去公式編輯畫面
+window.goToFormulaEdit = function(drugId, formulaId) {
+    if(typeof openFormulaManager === 'function') {
+        openFormulaManager(drugId);
+        if(formulaId && typeof editFormula === 'function') {
+            setTimeout(() => editFormula(formulaId), 50); // 微延遲確保畫面已切換
+        }
+    }
 };
 
 window.setupDrugCategorySelects = function() {
@@ -120,14 +134,31 @@ window.viewDrug = function(drugId) {
 
     document.getElementById('drug-fieldset').disabled = true;
     document.getElementById('btn-edit-drug-mode').classList.remove('hidden');
-    
-    // 【修改核心】打開藥品公式維護按鈕
-    document.getElementById('btn-manage-formula').classList.remove('hidden'); 
-    
     document.getElementById('btn-save-drug').classList.add('hidden');
     document.getElementById('btn-cancel-drug').classList.remove('hidden'); 
     
+    // 【新增】動態渲染該藥品的公式清單
+    renderCurrentDrugFormulas(drugId);
+    document.getElementById('drug-formulas-section').classList.remove('hidden');
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// 【新增】負責畫出單一藥品的公式列表
+window.renderCurrentDrugFormulas = function(drugId) {
+    const localFormulas = STORE.formulas.filter(f => f.drug_id === drugId);
+    const container = document.getElementById('list-current-drug-formulas');
+    if(!container) return;
+    
+    container.innerHTML = localFormulas.length === 0 
+        ? `<tr><td colspan="4" class="text-center text-gray-400 py-4">此藥品尚未建立任何公式</td></tr>`
+        : localFormulas.map(f => `
+            <tr class="cursor-pointer hover:bg-purple-50 transition" onclick="goToFormulaEdit('${f.drug_id}', '${f.formula_id}')">
+                <td class="font-bold text-purple-900"><i class="fa-solid fa-pen text-xs text-purple-300 mr-1"></i> ${f.formula_name}</td>
+                <td class="font-mono text-[11px] text-blue-800 bg-blue-50 p-1 rounded">Min: ${f.formula_min||'--'}<br>Max: ${f.formula_max||'--'}</td>
+                <td class="text-xs text-red-600">單:${f.single_max||'--'} ${f.single_max_unit||''}<br>日:${f.daily_max||'--'} ${f.daily_max_unit||''}</td>
+                <td onclick="event.stopPropagation()"><button onclick="deleteRecord('deleteFormula', '${f.formula_id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>`).join('');
 };
 
 window.enableDrugEditMode = function() {
@@ -170,13 +201,12 @@ window.resetDrugForm = function() {
 
     document.getElementById('drug-fieldset').disabled = false;
     document.getElementById('btn-edit-drug-mode').classList.add('hidden');
-    
-    // 【修改核心】還原為新增狀態時，隱藏跳轉公式按鈕
-    document.getElementById('btn-manage-formula').classList.add('hidden'); 
-    
     document.getElementById('btn-save-drug').classList.remove('hidden');
     document.getElementById('btn-save-drug').innerText = "儲存藥品"; 
     document.getElementById('btn-cancel-drug').classList.add('hidden');
+    
+    // 【新增】新增模式時隱藏專屬公式區塊
+    document.getElementById('drug-formulas-section').classList.add('hidden');
 };
 
 window.saveDrug = async function() {
