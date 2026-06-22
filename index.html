@@ -3,167 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>亞東醫院藥學部 - 小兒科藥品劑量建議計算機</title>
+    <title>亞東醫院藥學部 - 臨床藥品劑量建議計算機</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./assets/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="flex h-screen bg-gray-50 overflow-hidden font-sans">
 
-    <header class="bg-[#1B365D] text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <div class="flex items-center gap-3">
+    <aside class="w-64 bg-[#1B365D] text-white flex flex-col flex-shrink-0 shadow-xl z-20 relative">
+        <div class="p-5 border-b border-white/20">
+            <div class="flex items-center gap-3 mb-2">
                 <i class="fa-solid fa-prescription-bottle-medical text-2xl text-blue-300"></i>
-                <div>
-                    <h1 class="text-xl font-bold tracking-wide">亞東醫院藥學部</h1>
-                    <p class="text-xs text-blue-200">小兒科藥品劑量建議計算機</p>
-                </div>
+                <div><h1 class="text-lg font-bold tracking-wide leading-tight">亞東醫院藥學部</h1></div>
             </div>
-            <div class="flex items-center gap-4">
-                <span id="version-badge" class="bg-blue-800 text-blue-100 text-xs px-2.5 py-1 rounded-full font-medium">載入中...</span>
-                <a href="./admin.html" class="text-sm bg-transparent hover:bg-white/10 px-3 py-1.5 rounded border border-white/30 transition flex items-center gap-1">
-                    <i class="fa-solid fa-lock-open"></i>後台維護
-                </a>
-                <button onclick="window.openFeedbackModal('一般系統建議')" class="text-sm bg-blue-700 hover:bg-blue-600 px-3 py-1.5 rounded transition">
-                    <i class="fa-solid fa-comment-dots"></i> 意見回饋
-                </button>
-            </div>
+            <p class="text-[11px] text-blue-200">臨床藥品劑量建議計算機</p>
+            <span id="version-badge" class="inline-block mt-2 bg-blue-800 text-blue-100 text-[10px] px-2 py-0.5 rounded-full font-medium">載入中...</span>
         </div>
-    </header>
-
-    <div id="announcement-banner" class="hidden max-w-7xl mx-auto mt-4 px-4 w-full">
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-3 rounded shadow-sm flex justify-between items-center text-sm">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-bullhorn text-yellow-600"></i>
-                <span id="announcement-text" class="font-bold"></span>
-            </div>
-            <button onclick="document.getElementById('announcement-banner').classList.add('hidden')" class="text-yellow-600 hover:text-yellow-800">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-    </div>
-
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
         
-        <section class="w-full md:w-1/3 bg-white rounded-lg shadow-sm p-4 border border-gray-100 flex flex-col gap-4">
-            <h2 class="text-base font-bold text-[#1B365D] border-b pb-2 flex items-center gap-2">
-                <i class="fa-solid fa-magnifying-glass"></i>藥品篩選器
-            </h2>
-            
-            <div class="flex flex-col gap-2 bg-blue-50/50 p-3 rounded border border-blue-100">
-                <label class="text-xs font-bold text-blue-800 flex items-center gap-1">
-                    <i class="fa-solid fa-layer-group"></i> 分類層級篩選
-                </label>
-                <select id="filter-cat1" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] bg-white">
-                    <option value="">-- 所有第一層分類 --</option>
-                </select>
-                <select id="filter-cat2" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] disabled:bg-gray-100 bg-white" disabled>
-                    <option value="">-- 所有第二層分類 --</option>
-                </select>
-                <select id="filter-cat3" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] disabled:bg-gray-100 bg-white" disabled>
-                    <option value="">-- 所有第三層分類 --</option>
-                </select>
-            </div>
+        <nav class="flex-grow py-4 overflow-y-auto">
+            <ul class="flex flex-col gap-1">
+                <li class="front-nav active px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3 border-l-4 border-[#63B3ED] bg-white/10 transition" data-target="home">
+                    <i class="fa-solid fa-house w-5 text-center"></i> 系統首頁與公告
+                </li>
+                <li class="front-nav px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3 border-l-4 border-transparent transition" data-target="NICU">
+                    <i class="fa-solid fa-baby w-5 text-center"></i> 新生兒 ICU
+                </li>
+                <li class="front-nav px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3 border-l-4 border-transparent transition" data-target="PED">
+                    <i class="fa-solid fa-child w-5 text-center"></i> 小兒科
+                </li>
+                <li class="front-nav px-5 py-3 cursor-pointer hover:bg-white/10 flex items-center gap-3 border-l-4 border-transparent transition" data-target="ADU">
+                    <i class="fa-solid fa-person w-5 text-center"></i> 成人抗生素
+                </li>
+            </ul>
+        </nav>
+        
+        <div class="p-4 border-t border-white/20 flex flex-col gap-2">
+            <button onclick="window.openFeedbackModal('一般系統建議')" class="w-full text-sm bg-blue-700 hover:bg-blue-600 py-2 rounded transition flex justify-center items-center gap-2">
+                <i class="fa-solid fa-comment-dots"></i> 意見回饋
+            </button>
+            <a href="./admin.html" class="w-full text-center text-sm border border-white/40 py-2 rounded hover:bg-white/10 transition flex justify-center items-center gap-2">
+                <i class="fa-solid fa-lock-open"></i> 後台維護
+            </a>
+        </div>
+    </aside>
 
-            <div class="relative">
-                <input type="text" id="search-input" placeholder="模糊搜尋 (學名/各類商品名)..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#1B365D] text-sm">
-                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
-            </div>
-            
-            <div class="flex-grow overflow-y-auto max-h-[400px] md:max-h-[600px] pr-1" id="category-tree">
-                <p class="text-xs text-gray-400 italic text-center py-4" id="loading-status">準備從雲端載入藥品資料庫...</p>
-            </div>
-        </section>
-
-        <section class="w-full md:w-2/3 bg-white rounded-lg shadow-sm p-5 border border-gray-100 flex flex-col gap-5">
-            <h2 class="text-base font-bold text-[#1B365D] border-b pb-2 flex items-center gap-2">
-                <i class="fa-solid fa-calculator"></i>劑量計算主機
-            </h2>
-            
-            <div id="calc-placeholder" class="text-center py-20 text-gray-400 flex flex-col items-center gap-3">
-                <i class="fa-solid fa-hand-pointer text-4xl text-gray-300"></i>
-                <p class="text-sm">請由左側選擇或搜尋小兒科藥品以開始計算</p>
-            </div>
-
-            <div id="calc-panel" class="hidden flex flex-col gap-4">
-                <div class="bg-gray-50 p-5 rounded border border-gray-200 shadow-sm flex flex-col gap-3">
-                    
-                    <div class="flex justify-between items-start gap-2 flex-wrap border-b border-gray-200 pb-3">
-                        <div class="flex gap-1 flex-wrap items-center" id="drug-right-cats"></div>
-                        <div class="flex gap-2 items-center flex-wrap justify-end">
-                            <span id="drug-badge-crush" class="hidden text-[10px] font-bold px-2 py-0.5 rounded border"></span>
-                            <span id="drug-badge-code" class="hidden bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded"></span>
-                            <button onclick="window.openFeedbackModal('藥品錯誤回報：' + (currentDrug.local_name||currentDrug.generic_name))" class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded border hover:bg-gray-200 shadow-sm"><i class="fa-solid fa-triangle-exclamation"></i> 報錯</button>
-                            <button onclick="window.goToAdminEdit()" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded border hover:bg-blue-200 shadow-sm font-bold"><i class="fa-solid fa-pen-to-square"></i> 後台修改</button>
-                        </div>
-                    </div>
-                    
-                    <h3 id="drug-title" class="text-xl font-bold text-[#1B365D] leading-tight mt-1">學名</h3>
-                    
-                    <div class="text-xs text-gray-600 flex flex-col gap-2 pt-1">
-                        <div class="flex"><span class="w-24 font-bold text-gray-500">現有商品名</span><span id="drug-sub1" class="font-medium text-gray-800">--</span></div>
-                        <div class="flex"><span class="w-24 font-bold text-gray-500">中文商品名</span><span id="drug-sub2" class="font-medium text-gray-800">--</span></div>
-                        <div class="flex"><span class="w-24 font-bold text-gray-500">原廠商品名</span><span id="drug-sub3" class="font-medium text-gray-800">--</span></div>
-                    </div>
-                    
-                    <div id="drug-related-container" class="hidden pt-3 border-t border-gray-200 text-xs">
-                        <span class="font-bold text-teal-700 block mb-1"><i class="fa-solid fa-link text-teal-500"></i> 關聯藥品：</span>
-                        <div id="drug-related-list" class="flex flex-wrap gap-1"></div>
-                    </div>
-
-                    <div id="drug-url-container" class="pt-1">
-                        <a id="drug-url-btn" href="#" target="_blank" class="hidden inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-3 py-1.5 rounded border border-purple-200 hover:bg-purple-200 transition shadow-sm font-bold">
-                            <i class="fa-solid fa-file-medical"></i> 仿單連結
-                        </a>
-                    </div>
-                </div>
-
-                <div id="drug-dose-inst-container" class="hidden bg-green-50 border border-green-200 p-3 rounded text-sm text-green-800">
-                    <div class="font-bold mb-1 flex items-center gap-1"><i class="fa-solid fa-book-medical"></i> 臨床建議劑量說明：</div>
-                    <div id="drug-dose-inst" class="whitespace-pre-wrap text-xs"></div>
-                </div>
-
-                <div id="drug-supplemental-container" class="hidden bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-800">
-                    <div class="font-bold mb-1 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> 補充說明：</div>
-                    <div id="drug-supplemental" class="whitespace-pre-wrap text-xs"></div>
+    <main class="flex-grow flex flex-col h-screen overflow-hidden relative bg-gray-50">
+        
+        <div id="home-view" class="view-section active w-full h-full overflow-y-auto p-6 md:p-10">
+            <div class="max-w-4xl mx-auto flex flex-col gap-6">
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-2 bg-[#1B365D]"></div>
+                    <i class="fa-solid fa-hospital text-6xl text-[#1B365D] mb-4"></i>
+                    <h2 id="home-welcome" class="text-3xl font-bold text-gray-800 mb-2">歡迎使用臨床藥品劑量建議計算機</h2>
+                    <p id="home-owner" class="text-gray-500 font-medium">系統維護：亞東醫院藥學部</p>
                 </div>
                 
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1.5">請選擇臨床適應症 / 年齡段 / 計算方法：</label>
-                    <select id="formula-select" class="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] bg-white"></select>
-                    <p id="formula-remark" class="text-xs text-blue-600 mt-1 italic"></p>
-                </div>
-
-                <div id="absolute-max-alert" class="hidden bg-red-50 border border-red-200 p-2 rounded text-xs text-red-700 font-bold flex gap-4">
-                    <span id="single-max-text"></span>
-                    <span id="daily-max-text"></span>
-                </div>
-
-                <div id="dynamic-parameters" class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4"></div>
-
-                <div class="mt-2 border-t pt-5 bg-blue-50/50 p-5 rounded-lg border border-blue-100 flex flex-col gap-4">
-                    <div>
-                        <span class="block text-xs font-bold text-gray-600 mb-1">系統計算建議區間：</span>
-                        <div class="flex items-baseline gap-2">
-                            <span id="result-value" class="text-3xl font-extrabold text-[#1B365D]">--</span>
-                            <span id="result-unit" class="text-sm font-bold text-gray-600"></span>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+                        <h3 class="font-bold text-lg text-[#1B365D] border-b border-gray-200 pb-2 mb-4"><i class="fa-solid fa-book text-blue-500 mr-2"></i>使用規則與說明</h3>
+                        <div id="home-rules" class="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed flex-grow">載入中...</div>
                     </div>
-                    
-                    <div class="border-t border-blue-200 pt-4">
-                        <label class="block text-xs font-bold text-blue-800 mb-1">
-                            <i class="fa-solid fa-user-doctor mr-1"></i>醫師開立處方劑量比對 (選填)
-                        </label>
-                        <div class="flex items-center gap-2">
-                            <input type="number" id="prescribed-dose" step="any" placeholder="輸入處方數字..." class="border border-blue-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] w-48 shadow-inner bg-white">
-                            <span class="text-sm font-bold text-gray-600 prescribed-unit-display"></span>
-                        </div>
-                        <div id="dose-eval-msg" class="text-sm font-bold mt-2 hidden flex items-center gap-1.5 p-2 rounded"></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+                        <h3 class="font-bold text-lg text-[#1B365D] border-b border-gray-200 pb-2 mb-4"><i class="fa-solid fa-bullhorn text-yellow-500 mr-2"></i>系統公告</h3>
+                        <div id="home-announcements" class="flex flex-col gap-3 flex-grow overflow-y-auto max-h-[400px] pr-2">載入中...</div>
                     </div>
                 </div>
+                
+                <div class="text-center text-xs text-gray-400 mt-4 pb-8" id="home-copyright">Copyright © 2026</div>
             </div>
-        </section>
+        </div>
+
+        <div id="calc-view" class="view-section hidden w-full h-full overflow-hidden flex flex-col md:flex-row gap-6 p-4 md:p-6">
+            
+            <section class="w-full md:w-1/3 bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col h-full">
+                <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-[#1B365D] text-white rounded-t-lg">
+                    <h2 class="text-base font-bold flex items-center gap-2"><i class="fa-solid fa-magnifying-glass"></i> <span id="calc-domain-title">藥品篩選器</span></h2>
+                </div>
+                <div class="p-4 flex flex-col gap-3 flex-grow overflow-hidden">
+                    <div class="flex flex-col gap-2 bg-blue-50 p-3 rounded border border-blue-100">
+                        <label class="text-xs font-bold text-blue-800 flex items-center gap-1"><i class="fa-solid fa-layer-group"></i> 分類層級篩選</label>
+                        <select id="filter-cat1" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] bg-white"><option value="">-- 所有第一層分類 --</option></select>
+                        <select id="filter-cat2" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] disabled:bg-gray-100 bg-white" disabled><option value="">-- 所有第二層分類 --</option></select>
+                        <select id="filter-cat3" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:outline-none focus:border-[#1B365D] disabled:bg-gray-100 bg-white" disabled><option value="">-- 所有第三層分類 --</option></select>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="search-input" placeholder="模糊搜尋 (學名/各類商品名)..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#1B365D] text-sm">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                    </div>
+                    <div class="flex-grow overflow-y-auto pr-1" id="category-tree"><p class="text-xs text-gray-400 italic text-center py-4" id="loading-status">載入中...</p></div>
+                </div>
+            </section>
+
+            <section class="w-full md:w-2/3 bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col h-full overflow-y-auto">
+                <div class="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                    <h2 class="text-base font-bold text-[#1B365D] flex items-center gap-2"><i class="fa-solid fa-calculator"></i> 劑量計算主機</h2>
+                </div>
+                
+                <div class="p-5 flex-grow">
+                    <div id="calc-placeholder" class="text-center py-20 text-gray-400 flex flex-col items-center gap-3">
+                        <i class="fa-solid fa-hand-pointer text-4xl text-gray-300"></i><p class="text-sm">請由左側選擇藥品以開始計算</p>
+                    </div>
+
+                    <div id="calc-panel" class="hidden flex flex-col gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3 relative">
+                            <div class="flex justify-between items-start gap-2 flex-wrap border-b border-gray-100 pb-3">
+                                <div class="flex gap-1 flex-wrap items-center" id="drug-right-cats"></div>
+                                <div class="flex gap-2 items-center flex-wrap justify-end">
+                                    <span id="drug-badge-crush" class="hidden text-[10px] font-bold px-2 py-0.5 rounded border"></span>
+                                    <span id="drug-badge-code" class="hidden bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded"></span>
+                                    <button onclick="window.openFeedbackModal('藥品錯誤回報：' + (currentDrug.local_name||currentDrug.generic_name))" class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded border hover:bg-gray-200 shadow-sm"><i class="fa-solid fa-triangle-exclamation"></i> 報錯</button>
+                                    <button onclick="window.goToAdminEdit()" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded border hover:bg-blue-200 shadow-sm font-bold"><i class="fa-solid fa-pen-to-square"></i> 後台修改</button>
+                                </div>
+                            </div>
+                            
+                            <h3 id="drug-title" class="text-xl font-bold text-[#1B365D] leading-tight mt-1">學名</h3>
+                            
+                            <div class="text-xs text-gray-600 flex flex-col gap-2 pt-1">
+                                <div class="flex"><span class="w-24 font-bold text-gray-500">現有商品名</span><span id="drug-sub1" class="font-medium text-gray-800">--</span></div>
+                                <div class="flex"><span class="w-24 font-bold text-gray-500">中文商品名</span><span id="drug-sub2" class="font-medium text-gray-800">--</span></div>
+                                <div class="flex"><span class="w-24 font-bold text-gray-500">原廠商品名</span><span id="drug-sub3" class="font-medium text-gray-800">--</span></div>
+                            </div>
+                            
+                            <div id="drug-related-container" class="hidden pt-3 border-t border-gray-100 text-xs">
+                                <span class="font-bold text-teal-700 block mb-1"><i class="fa-solid fa-link text-teal-500"></i> 關聯藥品：</span>
+                                <div id="drug-related-list" class="flex flex-wrap gap-1"></div>
+                            </div>
+
+                            <div id="drug-ref-container" class="hidden mt-1 pt-3 border-t border-gray-100 text-xs">
+                                <span class="font-bold text-purple-700 block mb-1"><i class="fa-solid fa-file-medical"></i> 參考資料 / 仿單連結：</span>
+                                <div id="drug-ref-text" class="whitespace-pre-wrap text-gray-700 font-mono break-all"></div>
+                            </div>
+                        </div>
+
+                        <div id="drug-dose-inst-container" class="hidden bg-green-50 border border-green-200 p-3 rounded text-sm text-green-800">
+                            <div class="font-bold mb-1 flex items-center gap-1"><i class="fa-solid fa-book-medical"></i> 臨床建議劑量說明：</div>
+                            <div id="drug-dose-inst" class="whitespace-pre-wrap text-xs leading-relaxed"></div>
+                        </div>
+
+                        <div id="drug-supplemental-container" class="hidden bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-800">
+                            <div class="font-bold mb-1 flex items-center gap-1"><i class="fa-solid fa-circle-info"></i> 補充說明：</div>
+                            <div id="drug-supplemental" class="whitespace-pre-wrap text-xs leading-relaxed"></div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded border border-gray-200">
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5">請選擇臨床適應症 / 年齡段 / 計算方法：</label>
+                            <select id="formula-select" class="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] bg-white"></select>
+                            <p id="formula-remark" class="text-xs text-blue-600 mt-1 italic"></p>
+                        </div>
+
+                        <div id="absolute-max-alert" class="hidden bg-red-50 border border-red-200 p-2 rounded text-xs text-red-700 font-bold flex gap-4">
+                            <span id="single-max-text"></span><span id="daily-max-text"></span>
+                        </div>
+
+                        <div id="dynamic-parameters" class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4"></div>
+
+                        <div class="mt-2 border-t pt-5 bg-blue-50/50 p-5 rounded-lg border border-blue-100 flex flex-col gap-4">
+                            <div>
+                                <span class="block text-xs font-bold text-gray-600 mb-1">系統計算建議區間：</span>
+                                <div class="flex items-baseline gap-2">
+                                    <span id="result-value" class="text-3xl font-extrabold text-[#1B365D]">--</span>
+                                    <span id="result-unit" class="text-sm font-bold text-gray-600"></span>
+                                </div>
+                            </div>
+                            <div class="border-t border-blue-200 pt-4">
+                                <label class="block text-xs font-bold text-blue-800 mb-1"><i class="fa-solid fa-user-doctor mr-1"></i>醫師開立處方劑量比對 (選填)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="prescribed-dose" step="any" placeholder="輸入處方數字..." class="border border-blue-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] w-48 shadow-inner bg-white">
+                                    <span class="text-sm font-bold text-gray-600 prescribed-unit-display"></span>
+                                </div>
+                                <div id="dose-eval-msg" class="text-sm font-bold mt-2 hidden flex items-center gap-1.5 p-2 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </main>
 
     <div id="feedback-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
