@@ -50,7 +50,6 @@ window.renderDrugsList = function() {
 
     document.getElementById('drug-list-count').innerText = filteredDrugs.length;
 
-    // 加入預設保護機制，如果舊資料沒有 domain，預設為 PED
     document.getElementById('list-drugs').innerHTML = filteredDrugs.map(d => {
         const dom = d.domain || 'PED';
         let domText = dom === 'NICU' ? '新生兒 ICU' : (dom === 'ADU' ? '成人抗生素' : '小兒科');
@@ -96,8 +95,6 @@ window.viewDrug = function(drugId) {
 
     document.getElementById('drug-mode').value = 'edit'; 
     document.getElementById('drug-id').value = d.drug_id;
-    
-    // 【修改】加入 Domain
     document.getElementById('drug-domain').value = d.domain || 'PED';
 
     const c1 = document.getElementById('drug-cat1'), c2 = document.getElementById('drug-cat2'), c3 = document.getElementById('drug-cat3');
@@ -123,6 +120,10 @@ window.viewDrug = function(drugId) {
 
     document.getElementById('drug-fieldset').disabled = true;
     document.getElementById('btn-edit-drug-mode').classList.remove('hidden');
+    
+    // 【修改核心】打開藥品公式維護按鈕
+    document.getElementById('btn-manage-formula').classList.remove('hidden'); 
+    
     document.getElementById('btn-save-drug').classList.add('hidden');
     document.getElementById('btn-cancel-drug').classList.remove('hidden'); 
     
@@ -134,6 +135,12 @@ window.enableDrugEditMode = function() {
     document.getElementById('btn-edit-drug-mode').classList.add('hidden');
     document.getElementById('btn-save-drug').classList.remove('hidden');
     document.getElementById('btn-save-drug').innerText = "更新儲存";
+};
+
+// 【新增】點擊後直接帶著 drug_id 跳到公式維護介面
+window.jumpToFormula = function() {
+    const drugId = document.getElementById('drug-id').value;
+    if(drugId) openFormulaManager(drugId);
 };
 
 window.resetDrugForm = function() {
@@ -163,33 +170,23 @@ window.resetDrugForm = function() {
 
     document.getElementById('drug-fieldset').disabled = false;
     document.getElementById('btn-edit-drug-mode').classList.add('hidden');
+    
+    // 【修改核心】還原為新增狀態時，隱藏跳轉公式按鈕
+    document.getElementById('btn-manage-formula').classList.add('hidden'); 
+    
     document.getElementById('btn-save-drug').classList.remove('hidden');
     document.getElementById('btn-save-drug').innerText = "儲存藥品"; 
     document.getElementById('btn-cancel-drug').classList.add('hidden');
 };
 
 window.saveDrug = async function() {
-    // 【修改】加入 domain 並完美對齊 18 個欄位的順序
     const payload = { 
-        action: 'saveDrug', 
-        mode: document.getElementById('drug-mode').value, 
-        drug_id: document.getElementById('drug-id').value, 
-        status: document.getElementById('drug-status').value,
-        domain: document.getElementById('drug-domain').value,
-        cat_1: document.getElementById('drug-cat1').value, 
-        cat_2: document.getElementById('drug-cat2').value, 
-        cat_3: document.getElementById('drug-cat3').value,
-        local_name: document.getElementById('drug-local').value.trim(), 
-        brand_name: document.getElementById('drug-brand').value.trim(), 
-        common_brand: document.getElementById('drug-common-brand').value.trim(),
-        generic_name: document.getElementById('drug-generic').value.trim(), 
-        ingredients: document.getElementById('drug-ingred').value.trim(), 
-        dose_instruction: document.getElementById('drug-dose-inst').value.trim(),
-        supplemental_info: document.getElementById('drug-supplemental').value.trim(), 
-        reference_url: document.getElementById('drug-url').value.trim(),
-        drug_code: document.getElementById('drug-code').value.trim(), 
-        can_crush: document.getElementById('drug-can-crush').value, 
-        form: document.getElementById('drug-form').value,
+        action: 'saveDrug', mode: document.getElementById('drug-mode').value, drug_id: document.getElementById('drug-id').value, status: document.getElementById('drug-status').value,
+        domain: document.getElementById('drug-domain').value, cat_1: document.getElementById('drug-cat1').value, cat_2: document.getElementById('drug-cat2').value, cat_3: document.getElementById('drug-cat3').value,
+        local_name: document.getElementById('drug-local').value.trim(), brand_name: document.getElementById('drug-brand').value.trim(), common_brand: document.getElementById('drug-common-brand').value.trim(),
+        generic_name: document.getElementById('drug-generic').value.trim(), ingredients: document.getElementById('drug-ingred').value.trim(), dose_instruction: document.getElementById('drug-dose-inst').value.trim(),
+        supplemental_info: document.getElementById('drug-supplemental').value.trim(), reference_url: document.getElementById('drug-url').value.trim(),
+        drug_code: document.getElementById('drug-code').value.trim(), can_crush: document.getElementById('drug-can-crush').value, form: document.getElementById('drug-form').value,
         related_drugs: stateTags.relatedDrugs.join(',')
     };
     
