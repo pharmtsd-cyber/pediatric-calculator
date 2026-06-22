@@ -2,34 +2,66 @@ let currentDrug = null;
 let currentFormula = null;
 let calculatedMin = null;
 let calculatedMax = null;
+let currentDomain = 'home'; // 預設停在首頁
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("計算機模組初始化...");
     document.getElementById('version-badge').innerText = CONFIG.VERSION || "v1.0.0";
     document.getElementById('prescribed-dose').addEventListener('input', checkPrescriptionSafety);
+    
+    // 左側選單切換邏輯
+    document.querySelectorAll('.front-nav').forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.front-nav').forEach(n => {
+                n.classList.remove('border-[#63B3ED]', 'bg-white/10');
+                n.classList.add('border-transparent');
+            });
+            item.classList.remove('border-transparent');
+            item.classList.add('border-[#63B3ED]', 'bg-white/10');
+
+            const target = item.getAttribute('data-target');
+            currentDomain = target;
+
+            if(target === 'home') {
+                document.getElementById('home-view').classList.remove('hidden');
+                document.getElementById('calc-view').classList.add('hidden');
+            } else {
+                document.getElementById('home-view').classList.add('hidden');
+                document.getElementById('calc-view').classList.remove('hidden');
+                document.getElementById('calc-domain-title').innerText = item.innerText.trim();
+                
+                // 切換計算機時，重設篩選並重新渲染
+                document.getElementById('search-input').value = '';
+                document.getElementById('filter-cat1').value = '';
+                document.getElementById('filter-cat2').innerHTML = '<option value="">-- 所有第二層分類 --</option>';
+                document.getElementById('filter-cat2').disabled = true;
+                document.getElementById('filter-cat3').innerHTML = '<option value="">-- 所有第三層分類 --</option>';
+                document.getElementById('filter-cat3').disabled = true;
+                
+                document.getElementById('calc-placeholder').classList.remove('hidden');
+                document.getElementById('calc-panel').classList.add('hidden');
+                applyFilters(); 
+            }
+        });
+    });
+
     initializeCalculator();
 });
 
 async function initializeCalculator() {
     const loadingStatus = document.getElementById('loading-status');
     try {
-        // 【修正】加入 fetchFromGAS('getCategories') 抓取分類基本檔
-        const [drugsData, paramsData, formulasData, annoData, catData] = await Promise.all([
-            fetchFromGAS('getDrugs'), fetchFromGAS('getParameters'), fetchFromGAS('getFormulas'), fetchFromGAS('getAnnouncements'), fetchFromGAS('getCategories')
+        const [drugsData, paramsData, formulasData, annoData, catData, settingsData] = await Promise.all([
+            fetchFromGAS('getDrugs'), fetchFromGAS('getParameters'), fetchFromGAS('getFormulas'), fetchFromGAS('getAnnouncements'), fetchFromGAS('getCategories'), fetchFromGAS('getSettings')
         ]);
 
         if (drugsData && paramsData && formulasData) {
             STORE.drugs = drugsData; STORE.parameters = paramsData; STORE.formulas = formulasData;
-            STORE.categories = catData || []; // 存入分類資料
+            STORE.categories = catData || []; 
+            STORE.announcements = annoData || [];
+            STORE.settings = {};
+            if(settingsData) settingsData.forEach(s => STORE.settings[s.setting_key] = s.setting_value);
             
-            if (annoData) {
-                const pinned = annoData.find(a => a.is_pinned === 'Y');
-                if (pinned) {
-                    document.getElementById('announcement-banner').classList.remove('hidden');
-                    document.getElementById('announcement-text').innerText = `[${pinned.version}] ${pinned.date ? new Date(pinned.date).toLocaleDateString() : ''} - ${pinned.content}`;
-                }
-            }
-
+            renderHomeContent();
             setupFilters();
             applyFilters();
         } else {
@@ -39,39 +71,44 @@ async function initializeCalculator() {
     } catch (error) { loadingStatus.innerText = "系統發生錯誤。"; }
 }
 
+function renderHomeContent() {
+    document.getElementById('home-welcome').innerText = STORE.settings.welcome_title || "歡迎使用臨床藥品劑量建議計算機";
+    document.getElementById('home-owner').innerText = "系統維護：" + (STORE.settings.owner || "亞東醫院藥學部");
+    document.getElementById('home-copyright').innerText = STORE.settings.copyright || "Copyright © 2026";
+    document.getElementById('home-rules').innerText = STORE.settings.usage_rules || "暫無說明";
+
+    const annoHtml = STORE.announcements.sort((a,b) => new Date(b.date) - new Date(a.date)).map(a =>
+        `<div class="border-l-4 ${a.is_pinned === 'Y' ? 'border-yellow-400 bg-yellow-50' : 'border-blue-400 bg-blue-50'} p-3 rounded shadow-sm text-sm">
+            <span class="font-bold text-gray-800">[${a.version}] ${new Date(a.date).toLocaleDateString()}</span>
+            <div class="mt-1 text-gray-600 whitespace-pre-wrap">${a.content}</div>
+        </div>`
+    ).join('');
+    document.getElementById('home-announcements').innerHTML = annoHtml || "暫無公告";
+}
+
 function setupFilters() {
-    const cat1Select = document.getElementById('filter-cat1');
-    const cat2Select = document.getElementById('filter-cat2');
-    const cat3Select = document.getElementById('filter-cat3');
+    const cat1Select = document.getElementById('filter-cat1'), cat2Select = document.getElementById('filter-cat2'), cat3Select = document.getElementById('filter-cat3');
     const searchInput = document.getElementById('search-input');
 
-    // 【修正】使用 STORE.categories 來產生選項
     const cat1s = [...new Set(STORE.categories.map(c => c.cat_1).filter(Boolean))];
     cat1s.forEach(c => cat1Select.add(new Option(c, c)));
 
     cat1Select.addEventListener('change', () => {
         const val1 = cat1Select.value;
-        cat2Select.innerHTML = '<option value="">-- 所有第二層分類 --</option>';
-        cat3Select.innerHTML = '<option value="">-- 所有第三層分類 --</option>';
-        
+        cat2Select.innerHTML = '<option value="">-- 所有第二層分類 --</option>'; cat3Select.innerHTML = '<option value="">-- 所有第三層分類 --</option>';
         if (val1) {
             const cat2s = [...new Set(STORE.categories.filter(c => c.cat_1 === val1).map(c => c.cat_2).filter(Boolean))];
-            cat2s.forEach(c => cat2Select.add(new Option(c, c)));
-            cat2Select.disabled = false;
+            cat2s.forEach(c => cat2Select.add(new Option(c, c))); cat2Select.disabled = false;
         } else cat2Select.disabled = true;
-        cat3Select.disabled = true;
-        applyFilters();
+        cat3Select.disabled = true; applyFilters();
     });
 
     cat2Select.addEventListener('change', () => {
-        const val1 = cat1Select.value;
-        const val2 = cat2Select.value;
+        const val1 = cat1Select.value, val2 = cat2Select.value;
         cat3Select.innerHTML = '<option value="">-- 所有第三層分類 --</option>';
-        
         if (val2) {
             const cat3s = [...new Set(STORE.categories.filter(c => c.cat_1 === val1 && c.cat_2 === val2).map(c => c.cat_3).filter(Boolean))];
-            cat3s.forEach(c => cat3Select.add(new Option(c, c)));
-            cat3Select.disabled = false;
+            cat3s.forEach(c => cat3Select.add(new Option(c, c))); cat3Select.disabled = false;
         } else cat3Select.disabled = true;
         applyFilters();
     });
@@ -86,6 +123,9 @@ function applyFilters() {
 
     const filtered = STORE.drugs.filter(d => {
         if (d.status && d.status.toUpperCase() !== 'Y') return false;
+        // 【核心過濾器】只顯示當前所屬科別的藥品
+        if (d.domain !== currentDomain && currentDomain !== 'home') return false; 
+        
         if (c1 && d.cat_1 !== c1) return false;
         if (c2 && d.cat_2 !== c2) return false;
         if (c3 && d.cat_3 !== c3) return false;
@@ -170,10 +210,12 @@ function selectDrug(drug) {
     }
     formRow.innerHTML = `<div class="flex"><span class="w-24 font-bold text-gray-500">主要劑型</span><span class="font-medium text-gray-800">${drug.form || '--'}</span></div>`;
     
-    const urlBtn = document.getElementById('drug-url-btn');
-    if (drug.reference_url && drug.reference_url.startsWith('http')) {
-        urlBtn.href = drug.reference_url; urlBtn.classList.remove('hidden');
-    } else urlBtn.classList.add('hidden');
+    // 【修改】將參考仿單改為純文字顯示
+    const refContainer = document.getElementById('drug-ref-container');
+    if (drug.reference_url) {
+        document.getElementById('drug-ref-text').innerText = drug.reference_url;
+        refContainer.classList.remove('hidden');
+    } else refContainer.classList.add('hidden');
 
     const instContainer = document.getElementById('drug-dose-inst-container');
     if (drug.dose_instruction) {
@@ -216,7 +258,6 @@ function selectDrug(drug) {
 
 function renderDynamicParameters(formula) {
     if (!formula) return;
-    
     document.getElementById('prescribed-dose').value = '';
     document.getElementById('dose-eval-msg').classList.add('hidden');
     resetResult();
@@ -268,7 +309,6 @@ function renderDynamicParameters(formula) {
 
 function executeCalculation() {
     if (!currentFormula) return;
-
     let fMin = currentFormula.formula_min || '', fMax = currentFormula.formula_max || '';
     const inputs = document.querySelectorAll('.param-input');
     let allFilled = true;
@@ -334,9 +374,6 @@ function resetResult() {
     document.getElementById('dose-eval-msg').classList.add('hidden');
 }
 
-// ==========================================
-// 意見回饋與後台連動跳轉
-// ==========================================
 window.openFeedbackModal = function(contextInfo) {
     document.getElementById('feedback-context').innerText = contextInfo;
     document.getElementById('feedback-content').value = '';
@@ -356,12 +393,10 @@ window.submitFeedback = async function() {
         alert("回報成功！感謝您的協助。");
         document.getElementById('feedback-modal').classList.add('hidden');
     } catch(e) { alert("連線失敗"); }
-    
     btn.innerText = '送出回報'; btn.disabled = false;
 };
 
 window.goToAdminEdit = function() {
     if(!currentDrug) return;
-    // 帶著參數跳轉到後台，登入後會自動開啟這個藥品
     window.location.href = `./admin.html?drug_id=${currentDrug.drug_id}`;
 };
