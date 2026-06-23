@@ -102,11 +102,23 @@ async function handleLogin() {
     } catch(e) { msg.innerText = "網路連線異常"; } finally { btn.innerText = "登入系統"; btn.disabled = false; }
 }
 
+// 【新增】處理跳轉並清除網址參數
 function handleUrlJump() {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // 情境一：點選「資訊修改」，直接帶入藥品詳細表單
     if (urlParams.get('drug_id')) {
         if(typeof window.viewDrug === 'function') window.viewDrug(urlParams.get('drug_id'));
-        // 核心：跳轉後立刻把網址清空，防止重整時不斷觸發
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } 
+    // 情境二：點選「公式修改」，切換至系統總覽，並自動搜尋該藥品
+    else if (urlParams.get('dash_filter')) {
+        switchTab('dashboard');
+        const df = document.getElementById('filter-dash-drugs');
+        if (df) {
+            df.value = urlParams.get('dash_filter'); // 自動填入搜尋框
+            if(typeof window.renderDrugsList === 'function') window.renderDrugsList(); // 觸發清單與公式表的連動
+        }
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 }
