@@ -1,4 +1,4 @@
-// 全域變數供各模組使用 (STORE 已經在 config.js 中宣告，這裡僅擴充新屬性)
+// 全域變數供各模組使用
 var CURRENT_USER = null;
 var CONTEXT_DRUG = null;
 var stateTags = { relatedDrugs: [] };
@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-pw-cancel').onclick = () => document.getElementById('pw-modal').classList.add('hidden');
     document.getElementById('btn-pw-save').onclick = handleChangePassword;
 
-    // 綁定側邊欄切換 (改用平滑的 switchTab)
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', () => {
             switchTab(item.getAttribute('data-target'));
@@ -20,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAutoLogin();
 });
 
-// 【新增】全域分頁切換控制器
 window.switchTab = function(targetId) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -42,7 +40,6 @@ window.switchTab = function(targetId) {
     }
 };
 
-// 【新增】全域平滑滾動引擎 (解決畫面消失/找不到視窗的問題)
 window.scrollToTop = function() {
     const main = document.querySelector('main');
     if(main) main.scrollTo({ top: 0, behavior: 'smooth' });
@@ -102,23 +99,49 @@ async function handleLogin() {
     } catch(e) { msg.innerText = "網路連線異常"; } finally { btn.innerText = "登入系統"; btn.disabled = false; }
 }
 
-// 【新增】處理跳轉並清除網址參數
+window.handleChangePassword = async function() {
+    const oldPw = document.getElementById('pw-old').value, newPw = document.getElementById('pw-new').value;
+    if(!oldPw || !newPw) return alert("請完整輸入密碼");
+    const res = await fetch(CONFIG.GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'updatePassword', emp_id: CURRENT_USER.emp_id, old_password: oldPw, new_password: newPw }) });
+    const result = await res.json();
+    if(result.status === "success") { 
+        alert("密碼修改成功！"); 
+        document.getElementById('pw-modal').classList.add('hidden'); 
+    } else {
+        alert("修改失敗：" + result.message);
+    }
+};
+
+// 【優化核心】防呆跳轉引擎：處理公式檢視與一般編輯的雙重情境
 function handleUrlJump() {
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // 情境一：點選「資訊修改」，直接帶入藥品詳細表單
-    if (urlParams.get('drug_id')) {
-        if(typeof window.viewDrug === 'function') window.viewDrug(urlParams.get('drug_id'));
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } 
-    // 情境二：點選「公式修改」，切換至系統總覽，並自動搜尋該藥品
-    else if (urlParams.get('dash_filter')) {
-        switchTab('dashboard');
-        const df = document.getElementById('filter-dash-drugs');
-        if (df) {
-            df.value = urlParams.get('dash_filter'); // 自動填入搜尋框
-            if(typeof window.renderDrugsList === 'function') window.renderDrugsList(); // 觸發清單與公式表的連動
+    const drugId = urlParams.get('drug_id');
+    const action = urlParams.get('action');
+
+    if (drugId) {
+        if (action === 'formula_view') {
+            // 情境二：點選「公式修改」
+            switchTab('dashboard');
+            const df = document.getElementById('filter-dash-drugs');
+            if (df) {
+                // 精準鎖定該藥品
+                const d = STORE.drugs.find(x => String(x.drug_id) === String(drugId) || String(x.drug_code) === String(drugId));
+                if (d) {
+                    // 自動填入搜尋框，並觸發總表連動
+                    df.value = d.drug_code || d.generic_name || d.local_name;
+                    if(typeof window.renderDrugsList === 'function') window.renderDrugsList();
+                    
+                    // 貼心設計：稍微延遲讓畫面繪製完成後，自動滾動到公式大表
+                    setTimeout(() => {
+                        scrollToElement('list-dash-formulas');
+                    }, 200);
+                }
+            }
+        } else {
+            // 情境一：點選「資訊修改」，直接進入藥品詳細編輯頁
+            if(typeof window.viewDrug === 'function') window.viewDrug(drugId);
         }
+        // 清理網址，避免重新整理時重複觸發
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 }
@@ -158,7 +181,7 @@ window.sendPost = async function(payload) {
     const res = await fetch(CONFIG.GAS_API_URL, { method: 'POST', body: JSON.stringify(payload) });
     const result = await res.json();
     if(result.status === 'success') { 
-        loadAllData(); // 安靜重載，不再跳出 annoying 的 alert 中斷體驗
+        loadAllData();
     } else { alert("失敗：" + result.message); }
 };
 
@@ -171,18 +194,4 @@ window.deleteRecord = async function(action, id) {
     if(action==='deleteFormula') payload.formula_id = id; if(action==='deleteCategory') payload.cat_id = id; if(action==='deleteAnnouncement') payload.announce_id = id; 
     if(action==='deleteForm') payload.form_id = id; if(action==='deleteFeedback') payload.feedback_id = id;
     await sendPost(payload);
-};
-
-// 【補回】修改密碼功能
-window.handleChangePassword = async function() {
-    const oldPw = document.getElementById('pw-old').value, newPw = document.getElementById('pw-new').value;
-    if(!oldPw || !newPw) return alert("請完整輸入密碼");
-    const res = await fetch(CONFIG.GAS_API_URL, { method: 'POST', body: JSON.stringify({ action: 'updatePassword', emp_id: CURRENT_USER.emp_id, old_password: oldPw, new_password: newPw }) });
-    const result = await res.json();
-    if(result.status === "success") { 
-        alert("密碼修改成功！"); 
-        document.getElementById('pw-modal').classList.add('hidden'); 
-    } else {
-        alert("修改失敗：" + result.message);
-    }
 };
