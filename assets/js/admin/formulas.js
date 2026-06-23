@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let ACTIVE_FORMULA_INPUT = 'admin-formula-min';
     const minI = document.getElementById('admin-formula-min'), maxI = document.getElementById('admin-formula-max');
-    if(minI) { minI.addEventListener('focus', () => ACTIVE_FORMULA_INPUT = 'admin-formula-min'); minI.addEventListener('input', generateTestInputs); }
-    if(maxI) { maxI.addEventListener('focus', () => ACTIVE_FORMULA_INPUT = 'admin-formula-max'); maxI.addEventListener('input', generateTestInputs); }
+    if(minI) { minI.addEventListener('focus', () => ACTIVE_FORMULA_INPUT = 'admin-formula-min'); minI.addEventListener('input', window.debounce(generateTestInputs, 300)); }
+    if(maxI) { maxI.addEventListener('focus', () => ACTIVE_FORMULA_INPUT = 'admin-formula-max'); maxI.addEventListener('input', window.debounce(generateTestInputs, 300)); }
 
     document.querySelectorAll('.op-btn').forEach(btn => {
         btn.onclick = (e) => {
@@ -18,11 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // 初始化公式頁面的藥品模糊搜尋
     setupFormulaDrugSearch();
 });
 
-// 【新增】公式專用的單選藥品模糊搜尋
 function setupFormulaDrugSearch() {
     const input = document.getElementById('input-formulaDrug');
     const drop = document.getElementById('drop-formulaDrug');
@@ -48,12 +46,12 @@ function setupFormulaDrugSearch() {
         drop.classList.remove('hidden');
     };
 
+    // 【套用防抖】
     input.addEventListener('focus', updateDrop);
-    input.addEventListener('input', updateDrop);
+    input.addEventListener('input', window.debounce(updateDrop, 300));
     document.addEventListener('click', (e) => { if (!input.contains(e.target) && !drop.contains(e.target)) drop.classList.add('hidden'); });
 }
 
-// 【新增】選中藥品後，隱藏輸入框並顯示標籤
 window.setFormulaDrug = function(drugId, displayLabel) {
     document.getElementById('formula-drug-id-hidden').value = drugId;
     document.getElementById('tags-formulaDrug').innerHTML = `
@@ -65,7 +63,6 @@ window.setFormulaDrug = function(drugId, displayLabel) {
     document.getElementById('drop-formulaDrug').classList.add('hidden');
 };
 
-// 【新增】移除選中的藥品
 window.removeFormulaDrug = function() {
     document.getElementById('formula-drug-id-hidden').value = '';
     document.getElementById('tags-formulaDrug').innerHTML = '';
@@ -75,7 +72,6 @@ window.removeFormulaDrug = function() {
     inp.focus();
 };
 
-// 【修改】全域呼叫的新增公式 (支援預設帶入藥品)
 window.goToAddFormula = function(prefillDrugId = null) {
     resetFormulaForm();
     document.getElementById('formula-editor-title').innerText = "新增計算公式";
@@ -98,7 +94,6 @@ window.goToFormulaEdit = function(drugId, formulaId) {
     
     resetFormulaForm();
     
-    // 綁定藥品標籤
     const d = STORE.drugs.find(x => String(x.drug_id) === String(drugId) || String(x.drug_code) === String(drugId));
     if (d) {
         const label = `${d.drug_code||''} ${d.local_name||d.generic_name||''}`;
@@ -117,7 +112,6 @@ window.goToFormulaEdit = function(drugId, formulaId) {
     
     generateTestInputs();
     document.getElementById('formula-editor-title').innerText = "編輯公式：" + f.formula_name;
-    document.getElementById('btn-save-formula').innerText = "更新儲存區間"; 
     
     switchTab('formulas');
     scrollToTop();
@@ -128,7 +122,6 @@ window.resetFormulaForm = function() {
     setVal('formula-mode', 'add'); setVal('formula-id', '');
     ['admin-formula-name','admin-result-unit','admin-remark','formula-single-max','formula-single-unit','formula-daily-max','formula-daily-unit','admin-formula-min','admin-formula-max'].forEach(id => setVal(id, ''));
     
-    // 清空藥品綁定標籤
     removeFormulaDrug();
 
     const testInp = document.getElementById('admin-test-inputs');
