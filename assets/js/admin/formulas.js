@@ -46,7 +46,6 @@ function setupFormulaDrugSearch() {
         drop.classList.remove('hidden');
     };
 
-    // 【套用防抖】
     input.addEventListener('focus', updateDrop);
     input.addEventListener('input', window.debounce(updateDrop, 300));
     document.addEventListener('click', (e) => { if (!input.contains(e.target) && !drop.contains(e.target)) drop.classList.add('hidden'); });
@@ -105,7 +104,11 @@ window.goToFormulaEdit = function(drugId, formulaId) {
     const setVal = (elId, val) => { if(document.getElementById(elId)) document.getElementById(elId).value = val; };
     setVal('formula-mode', 'edit'); setVal('formula-id', f.formula_id);
     setVal('admin-formula-name', f.formula_name); setVal('admin-result-unit', f.result_unit);
-    setVal('admin-remark', f.remark || ''); setVal('formula-single-max', f.single_max || '');
+    
+    // 【保護】確保能載入多行字串
+    setVal('admin-remark', f.remark || ''); 
+    
+    setVal('formula-single-max', f.single_max || '');
     setVal('formula-single-unit', f.single_max_unit || ''); setVal('formula-daily-max', f.daily_max || '');
     setVal('formula-daily-unit', f.daily_max_unit || ''); setVal('admin-formula-min', f.formula_min || '');
     setVal('admin-formula-max', f.formula_max || '');
@@ -138,9 +141,19 @@ window.saveFormula = async function() {
     const payload = {
         action: 'saveFormula', mode: getVal('formula-mode'), formula_id: getVal('formula-id'), drug_id: assignedDrugId,
         formula_name: getVal('admin-formula-name'), formula_min: getVal('admin-formula-min'), formula_max: getVal('admin-formula-max'), result_unit: getVal('admin-result-unit'),
-        single_max: getVal('formula-single-max'), single_max_unit: getVal('formula-single-unit'), daily_max: getVal('formula-daily-max'), daily_max_unit: getVal('formula-daily-unit'), remark: getVal('admin-remark')
+        single_max: getVal('formula-single-max'), single_max_unit: getVal('formula-single-unit'), daily_max: getVal('formula-daily-max'), daily_max_unit: getVal('formula-daily-unit'), 
+        // 【保護】明確擷取備註內容
+        remark: getVal('admin-remark') 
     };
-    if(!payload.formula_name || !payload.formula_min) return alert("方法名稱與下限公式必填");
+    if(!payload.formula_name) return alert("計算方法名稱為必填");
+    
+    // 如果是純文字說明，不強制填寫 min/max 公式
+    const minVal = getVal('admin-formula-min').trim();
+    const maxVal = getVal('admin-formula-max').trim();
+    if(minVal === '' && maxVal === '' && payload.remark.trim() === '') {
+        return alert("請至少輸入「下限公式」或「備註提醒」的其中一項！");
+    }
+
     await sendPost(payload); 
     returnToDashboard();
 };
