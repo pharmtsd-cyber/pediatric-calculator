@@ -103,6 +103,19 @@ async function initializeCalculator() {
             loadingStatus.innerText = "資料載入失敗，請確認 API 網址。"; loadingStatus.classList.add('text-red-500');
         }
     } catch (error) { loadingStatus.innerText = "系統發生錯誤。"; }
+
+    // 在 initializeCalculator() 的最後面：
+    if(savedState.drugId) {
+        const d = STORE.drugs.find(x => x.drug_id === savedState.drugId);
+        if(d) {
+            // 給渲染一點時間，再滾動
+            setTimeout(() => {
+                selectDrug(d);
+                const el = document.getElementById(`drug-item-${d.drug_id}`);
+                if(el) el.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }, 300);
+        }
+    }
 }
 
 function renderHomeContent() {
