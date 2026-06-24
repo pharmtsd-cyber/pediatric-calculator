@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById('btn-save-drug')) document.getElementById('btn-save-drug').onclick = saveDrug;
 });
 
-// 【新增】防抖引擎 (供後台藥品過濾使用)
 window.debounce = function(func, delay) {
     let timer;
     return function(...args) {
@@ -39,8 +38,6 @@ window.setupDrugListFilters = function() {
 
     bindCascading(dc1, dc2, dc3);
     if(dd) dd.addEventListener('change', renderDrugsList);
-    
-    // 【套用防抖】
     if(df) df.addEventListener('input', window.debounce(renderDrugsList, 300));
 };
 
@@ -122,8 +119,7 @@ window.renderDashFormulas = function(dashDrugs) {
                     <div class="text-[11px] text-gray-600 leading-tight flex flex-col gap-0.5">
                         <div><span class="font-bold text-gray-400">中:</span> ${d.local_name||'--'}</div>
                         <div><span class="font-bold text-gray-400">商:</span> ${d.brand_name||'--'}</div>
-                    </div>
-                `;
+                    </div>`;
             }
 
             return `<tr class="hover:bg-purple-50 transition">
@@ -243,20 +239,86 @@ window.viewDrug = function(drugId) {
     scrollToTop();
 };
 
+// 【優化核心】公式專屬排序維護（支援 HTML5 拖拉自動同步）
 window.renderCurrentDrugFormulas = function(drugId, drugCode) {
     const localFormulas = STORE.formulas.filter(f => f.drug_id === drugId || (drugCode && f.drug_id === drugCode));
     const container = document.getElementById('list-current-drug-formulas');
     if(!container) return;
     
-    container.innerHTML = localFormulas.length === 0 
-        ? `<tr><td colspan="4" class="text-center text-gray-400 py-4">此藥品尚未建立任何公式</td></tr>`
-        : localFormulas.map(f => `
-            <tr class="cursor-pointer hover:bg-purple-50 transition" onclick="goToFormulaEdit('${drugId}', '${f.formula_id}')">
-                <td class="font-bold text-purple-900"><i class="fa-solid fa-pen text-xs text-purple-300 mr-1"></i> ${f.formula_name}</td>
-                <td class="font-mono text-[11px] text-blue-800 bg-blue-50 p-1 rounded">Min: ${f.formula_min||'--'}<br>Max: ${f.formula_max||'--'}</td>
-                <td class="text-xs text-red-600">單:${f.single_max||'--'} ${f.single_max_unit||''}<br>日:${f.daily_max||'--'} ${f.daily_max_unit||''}</td>
-                <td onclick="event.stopPropagation()"><button onclick="deleteRecord('deleteFormula', '${f.formula_id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td>
-            </tr>`).join('');
+    if(localFormulas.length === 0) {
+        container.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-4">此藥品尚未建立任何公式</td></tr>`;
+        return;
+    }
+
+    container.innerHTML = localFormulas.map(f => `
+        <tr class="cursor-move hover:bg-purple-50/50 transition drag-row" draggable="true" data-fid="${f.formula_id}">
+            <td class="text-gray-400 text-center"><i class="fa-solid fa-bars"></i></td>
+            <td class="font-bold text-purple-900"><i class="fa-solid fa-pen text-xs text-purple-300 mr-1"></i> ${f.formula_name}</td>
+            <td class="font-mono text-[11px] text-blue-800 bg-blue-50/50 p-1 rounded">Min: ${f.formula_min||'--'}<br>Max: ${f.formula_max||'--'}</td>
+            <td class="text-xs text-red-600">單:${f.single_max||'--'} ${f.single_max_unit||''}<br>日:${f.daily_max||'--'} ${f.daily_max_unit||''}</td>
+            <td onclick="event.stopPropagation()"><button onclick="deleteRecord('deleteFormula', '${f.formula_id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>`).join('');
+
+    // 綁定原生拖拉排序事件監聽器
+    let dragSourceEl = null;
+    const rows = container.querySelectorAll('.drag-row');
+    
+    rows.forEach(row => {
+        row.addEventListener('dragstart', (e) => {
+            dragSourceEl = row;
+            e.dataTransfer.effectAllowed = 'move';
+            row.classList.add('bg-purple-100', 'opacity-50');
+        });
+
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            return false;
+        });
+
+        row.addEventListener('dragenter', (e) => {
+            row.classList.add('border-t-2', 'border-purple-500');
+        });
+
+        row.addEventListener('dragleave', (e) => {
+            row.classList.remove('border-t-2', 'border-purple-500');
+        });
+
+        row.addEventListener('drop', async (e) => {
+            e.stopPropagation();
+            row.classList.remove('border-t-2', 'border-purple-500');
+            
+            if (dragSourceEl !== row) {
+                // 交換 DOM 節點位置
+                if (row.nextSibling === dragSourceEl) {
+                    container.insertBefore(dragSourceEl, row);
+                } else {
+                    container.insertBefore(dragSourceEl, row.nextSibling);
+                }
+                
+                // 收集排序完畢後的全新 ID 陣列
+                const orderedIds = [];
+                container.querySelectorAll('.drag-row').forEach(r => {
+                    orderedIds.push(r.getAttribute('data-fid'));
+                });
+
+                // 自動安靜地非同步儲存至 Google 試算表，不再跳彈窗打斷藥師
+                const originalText = container.previousElementSibling ? container.parentElement.parentElement.querySelector('span').innerHTML : '';
+                const spanTitle = container.parentElement.parentElement.querySelector('span');
+                if(spanTitle) spanTitle.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-purple-600 mr-1"></i> 正在儲存全新公式排序...`;
+                
+                await sendPost({ action: 'reorderFormulas', ordered_ids: orderedIds });
+                
+                if(spanTitle) spanTitle.innerHTML = `<i class="fa-solid fa-circle-check text-green-500 mr-1"></i> 排序已自動儲存成功！`;
+                setTimeout(() => { if(spanTitle) spanTitle.innerHTML = originalText; }, 2000);
+            }
+            return false;
+        });
+
+        row.addEventListener('dragend', () => {
+            row.classList.remove('bg-purple-100', 'opacity-50');
+            rows.forEach(r => r.classList.remove('border-t-2', 'border-purple-500'));
+        });
+    });
 };
 
 window.enableDrugEditMode = function() {
@@ -372,7 +434,6 @@ window.setupDrugDropdowns = function() {
         finalDrop.classList.remove('hidden');
     };
 
-    // 【套用防抖】
     finalInput.addEventListener('focus', () => { if(document.getElementById('drug-fieldset') && document.getElementById('drug-fieldset').disabled) return; updateDrop(); });
     finalInput.addEventListener('input', window.debounce(updateDrop, 300));
     document.addEventListener('click', (e) => { if (!finalInput.contains(e.target) && !finalDrop.contains(e.target)) finalDrop.classList.add('hidden'); });
