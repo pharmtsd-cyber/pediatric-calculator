@@ -242,10 +242,35 @@ function selectDrug(drug) {
     document.getElementById('drug-sub2').innerText = drug.local_name || '--';
     document.getElementById('drug-sub3').innerText = drug.common_brand || '--';
 
-    // (中間的徽章與關聯藥品邏輯不變，請保留您原本的)
-    // ...
+    // 補回：徽章與關聯藥品、劑型邏輯 (保留您原本的設計)
+    const badgeCode = document.getElementById('drug-badge-code'), badgeCrush = document.getElementById('drug-badge-crush');
+    if(drug.drug_code) { badgeCode.innerText = drug.drug_code; badgeCode.classList.remove('hidden'); } else badgeCode.classList.add('hidden');
+    if(drug.can_crush === 'Y') { badgeCrush.innerText = '可磨粉'; badgeCrush.className = 'text-[10px] font-bold px-2 py-0.5 rounded border border-green-300 bg-green-50 text-green-700'; badgeCrush.classList.remove('hidden'); }
+    else if(drug.can_crush === 'N') { badgeCrush.innerText = '不可磨粉'; badgeCrush.className = 'text-[10px] font-bold px-2 py-0.5 rounded border border-red-300 bg-red-50 text-red-700'; badgeCrush.classList.remove('hidden'); }
+    else if(drug.can_crush === 'NA') { badgeCrush.innerText = '非磨粉劑型'; badgeCrush.className = 'text-[10px] font-bold px-2 py-0.5 rounded border border-gray-300 bg-gray-50 text-gray-700'; badgeCrush.classList.remove('hidden'); }
+    else badgeCrush.classList.add('hidden');
 
-    // 【重要修復】明確控制說明卡片的顯隱
+    const relContainer = document.getElementById('drug-related-container'), relList = document.getElementById('drug-related-list');
+    if(drug.related_drugs) {
+        relList.innerHTML = drug.related_drugs.split(',').filter(Boolean).map(r => {
+            const matchedDrug = STORE.drugs.find(x => x.local_name === r || x.generic_name === r);
+            const formText = matchedDrug && matchedDrug.form ? ` <span class="text-teal-600 font-normal">(${matchedDrug.form})</span>` : '';
+            return `<span class="bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 rounded shadow-sm text-xs font-bold">${r}${formText}</span>`;
+        }).join('');
+        relContainer.classList.remove('hidden');
+    } else relContainer.classList.add('hidden');
+
+    const rightMetaContainer = document.getElementById('drug-sub3').parentElement.parentElement;
+    let formRow = document.getElementById('drug-form-row');
+    if (!formRow) {
+        formRow = document.createElement('div'); 
+        formRow.id = 'drug-form-row'; 
+        formRow.className = 'flex mt-1 pt-2 border-t border-gray-100'; 
+        rightMetaContainer.appendChild(formRow); 
+    }
+    formRow.innerHTML = `<span class="w-24 font-bold text-gray-500">主要劑型</span><span class="font-medium text-gray-800">${drug.form || '--'}</span>`;
+
+    // 補回：明確控制藥品專屬「說明卡片」的顯隱
     const instW = document.getElementById('drug-dose-inst-wrapper');
     if (drug.dose_instruction && drug.dose_instruction.trim() !== '') {
         document.getElementById('drug-dose-inst-content').innerText = drug.dose_instruction;
@@ -281,8 +306,8 @@ function selectDrug(drug) {
     const selectEl = document.getElementById('formula-select');
     selectEl.innerHTML = '';
     
-    const compareCard = document.getElementById('prescription-compare-card');
-    const calcResultCard = document.getElementById('result-value').parentElement.parentElement;
+    // 【關鍵修正】抓取同時包覆「建議區間」與「處方比對」的最外層淺藍色大容器
+    const calcResultContainer = document.getElementById('result-value').closest('.border-blue-100');
     
     if (drugFormulas.length === 0) { 
         selectEl.innerHTML = '<option value="">(尚未建置計算公式)</option>'; 
@@ -293,17 +318,15 @@ function selectDrug(drug) {
         document.getElementById('single-max-text').innerText = '';
         document.getElementById('daily-max-text').innerText = '';
         
-        // 隱藏計算相關區域
-        calcResultCard.classList.add('hidden');
-        if(compareCard) compareCard.classList.add('hidden');
+        // 隱藏整個計算與比對容器
+        if (calcResultContainer) calcResultContainer.classList.add('hidden');
         
         resetResult(); 
         return; 
     } else {
         // 有公式才顯示相關區域
         document.getElementById('dynamic-parameters').classList.remove('hidden');
-        calcResultCard.classList.remove('hidden');
-        if(compareCard) compareCard.classList.remove('hidden');
+        if (calcResultContainer) calcResultContainer.classList.remove('hidden');
         
         drugFormulas.forEach(f => {
             const option = document.createElement('option'); 
@@ -436,8 +459,20 @@ function checkPrescriptionSafety() {
 }
 
 function resetResult() {
-    document.getElementById('result-value').innerText = '--'; document.getElementById('result-value').className = 'text-3xl font-extrabold text-[#1B365D]';
-    calculatedMin = null; calculatedMax = null; document.getElementById('dose-eval-msg').classList.add('hidden');
+    document.getElementById('result-value').innerText = '--'; 
+    document.getElementById('result-value').className = 'text-3xl font-extrabold text-[#1B365D]';
+    
+    // 【新增】徹底清空單位標籤與輸入框，防止切換時殘留前一筆資料
+    const resUnit = document.getElementById('result-unit');
+    if(resUnit) resUnit.innerText = ''; 
+    const preUnit = document.querySelector('.prescribed-unit-display');
+    if(preUnit) preUnit.innerText = ''; 
+    const preDose = document.getElementById('prescribed-dose');
+    if(preDose) preDose.value = '';
+    
+    calculatedMin = null; 
+    calculatedMax = null; 
+    document.getElementById('dose-eval-msg').classList.add('hidden');
 }
 
 window.openFeedbackModal = function(contextInfo) { document.getElementById('feedback-context').innerText = contextInfo; document.getElementById('feedback-content').value = ''; document.getElementById('feedback-modal').classList.remove('hidden'); };
