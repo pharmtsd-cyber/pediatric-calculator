@@ -4,6 +4,7 @@ let calculatedMin = null;
 let calculatedMax = null;
 let currentDomain = 'home'; 
 
+// 防抖引擎 (Debounce)：延遲執行，避免狂打字時畫面卡頓
 window.debounce = function(func, delay) {
     let timer;
     return function(...args) {
@@ -16,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('version-badge').innerText = CONFIG.VERSION || "v1.0.0";
     document.getElementById('prescribed-dose').addEventListener('input', window.debounce(checkPrescriptionSafety, 300));
     
+    // 左側選單切換邏輯
     document.querySelectorAll('.front-nav').forEach(item => {
         item.addEventListener('click', () => {
             document.querySelectorAll('.front-nav').forEach(n => {
@@ -79,25 +81,6 @@ async function initializeCalculator() {
             STORE.settings = {}; if(settingsData) settingsData.forEach(s => STORE.settings[s.setting_key] = s.setting_value);
             
             renderHomeContent(); setupFilters(); applyFilters();
-
-            // 【新增】還原跳轉前的狀態記憶
-            const savedStateStr = localStorage.getItem('pharma_front_state');
-            if(savedStateStr) {
-                try {
-                    const savedState = JSON.parse(savedStateStr);
-                    if(savedState.domain && savedState.domain !== 'home') {
-                        const tab = document.querySelector(`.front-nav[data-target="${savedState.domain}"]`);
-                        if(tab) tab.click(); 
-                    }
-                    if(savedState.drugId) {
-                        const d = STORE.drugs.find(x => x.drug_id === savedState.drugId);
-                        if(d) selectDrug(d);
-                    }
-                } catch(e) {}
-                // 還原後清除狀態
-                localStorage.removeItem('pharma_front_state');
-            }
-
         } else {
             loadingStatus.innerText = "資料載入失敗，請確認 API 網址。"; loadingStatus.classList.add('text-red-500');
         }
@@ -255,7 +238,17 @@ function selectDrug(drug) {
     });
 
     const selectEl = document.getElementById('formula-select'); selectEl.innerHTML = '';
-    if (drugFormulas.length === 0) { selectEl.innerHTML = '<option value="">(尚未建置計算公式)</option>'; document.getElementById('dynamic-parameters').innerHTML = ''; resetResult(); return; }
+    
+    // 【修正 1】當無計算公式建置時，徹底清空、隱藏指引備註與最大劑量欄位，防止舊資料殘留
+    if (drugFormulas.length === 0) { 
+        selectEl.innerHTML = '<option value="">(尚未建置計算公式)</option>'; 
+        document.getElementById('dynamic-parameters').innerHTML = ''; 
+        document.getElementById('formula-remark').innerText = '';
+        document.getElementById('absolute-max-alert').classList.add('hidden');
+        document.getElementById('single-max-text').innerText = '';
+        document.getElementById('daily-max-text').innerText = '';
+        resetResult(); return; 
+    }
 
     drugFormulas.forEach(f => {
         const option = document.createElement('option'); option.value = f.formula_id; option.innerText = f.formula_name; selectEl.appendChild(option);
@@ -268,6 +261,7 @@ function selectDrug(drug) {
 function renderDynamicParameters(formula) {
     if (!formula) return;
     document.getElementById('prescribed-dose').value = ''; document.getElementById('dose-eval-msg').classList.add('hidden'); resetResult();
+
     document.getElementById('formula-remark').innerText = formula.remark ? `*指引備註：${formula.remark}` : '';
     document.getElementById('result-unit').innerText = formula.result_unit || ''; document.querySelector('.prescribed-unit-display').innerText = formula.result_unit || '';
 
@@ -331,24 +325,26 @@ function checkPrescriptionSafety() {
     const preInput = document.getElementById('prescribed-dose').value; const msgBox = document.getElementById('dose-eval-msg');
     if (!preInput || calculatedMin === null) { msgBox.classList.add('hidden'); return; }
 
-    const val = parseFloat(preInput); msgBox.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800');
+    const val = parseFloat(preInput); msgBox.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800', 'bg-red-600', 'text-white', 'animate-pulse', 'shadow-lg');
     
+    // 【修正 2】修改安全警示用詞，全面採用溫和、精準的臨床專業警示用字
     if (calculatedMax !== null) {
         if (val < calculatedMin) {
-            msgBox.classList.add('bg-yellow-100', 'text-yellow-800');
-            msgBox.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> 提示：處方劑量 <b>低於</b> 建議區間下限 (${calculatedMin})。`;
+            msgBox.className = 'text-sm font-bold mt-2 flex items-center gap-1.5 p-2 rounded bg-yellow-100 text-yellow-800';
+            msgBox.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> 提示：處方劑量低於建議下限 (${calculatedMin})，不在建議劑量範圍內，應再確認。`;
         } else if (val > calculatedMax) {
-            msgBox.classList.add('bg-red-100', 'text-red-800');
-            msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation animate-pulse"></i> 警告：處方劑量 <b>高於</b> 建議區間上限 (${calculatedMax})！請與醫師確認！`;
+            msgBox.className = 'text-sm font-bold mt-2 flex items-center gap-1.5 p-2 rounded bg-red-100 text-red-800 animate-pulse';
+            msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> 警告：處方劑量高於建議上限 (${calculatedMax})，不在建議劑量範圍內，應再確認。`;
         } else {
-            msgBox.classList.add('bg-green-100', 'text-green-800');
-            msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> 處方劑量安全：落在 ${calculatedMin} ~ ${calculatedMax} 建議區間內。`;
+            msgBox.className = 'text-sm font-bold mt-2 flex items-center gap-1.5 p-2 rounded bg-green-100 text-green-800';
+            msgBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> 處方劑量相符：落在 ${calculatedMin} ~ ${calculatedMax} 建議區間內。`;
         }
     }
     
+    // 超過單次絕對最大劑量上限時的警示用詞優化
     if (currentFormula.single_max && val > parseFloat(currentFormula.single_max)) {
         msgBox.className = 'text-sm font-bold mt-2 flex items-center gap-1.5 p-2 rounded bg-red-600 text-white animate-pulse shadow-lg';
-        msgBox.innerHTML = `<i class="fa-solid fa-skull-crossbones"></i> 極度危險：處方劑量已突破「單次絕對最大劑量 (${currentFormula.single_max})」！請立刻停用！`;
+        msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> 注意：處方劑量已突破單次絕對最大劑量上限 (${currentFormula.single_max})，不在建議劑量範圍內，應再確認。`;
     }
 }
 
@@ -376,17 +372,14 @@ window.saveCurrentState = function() {
     localStorage.setItem('pharma_front_state', JSON.stringify(state));
 };
 
-// 【優化】帶出資訊修改：精準傳遞 drug_id 進行編輯
 window.goToAdminEdit = function() { 
     if(!currentDrug) return; 
     saveCurrentState();
     window.location.href = `./admin.html?drug_id=${currentDrug.drug_id}`; 
 };
 
-// 【優化核心】帶出公式修改：精準傳遞 action=formula_view 與 drug_id
 window.goToAdminFormula = function() {
     if(!currentDrug) return;
     saveCurrentState();
-    // 傳送確切的 ID 與動作指令，避免中文編碼遺失
     window.location.href = `./admin.html?action=formula_view&drug_id=${currentDrug.drug_id}`;
 };
