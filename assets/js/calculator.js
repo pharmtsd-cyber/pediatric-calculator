@@ -281,6 +281,18 @@ function selectDrug(drug) {
     };
 
     currentFormula = drugFormulas[0]; renderDynamicParameters(currentFormula);
+
+    // 【優化】將 UI 選中樣式重新渲染
+    renderDrugList(STORE.drugs.filter(d => {
+        // 簡單邏輯，實際應用建議從 applyFilters 撈出當前陣列
+        return d.domain === currentDomain; 
+    }));
+
+    // 【優化核心】自動滾動到被選中的藥品位置
+    const selectedEl = document.getElementById(`drug-item-${drug.drug_id}`);
+    if (selectedEl) {
+        selectedEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 }
 
 function renderDynamicParameters(formula) {
