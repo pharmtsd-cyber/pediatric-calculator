@@ -177,6 +177,20 @@
                     <button onclick="window.returnToDashboard()" type="button" class="bg-gray-400 text-white px-4 py-2 rounded text-sm font-bold"><i class="fa-solid fa-arrow-turn-up"></i> 返回系統總覽</button>
                 </div>
             </div>
+
+            <div id="drug-formulas-section" class="hidden mt-6 bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div class="p-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
+                    <span class="font-bold text-sm text-purple-900">
+                        <i class="fa-solid fa-arrows-up-down text-purple-500 mr-1 animate-pulse"></i> 
+                        此藥品的公式清單 (點住列表可【上下拖拉排序】，前台下拉選單將自動同步)
+                    </span>
+                    <button onclick="jumpToFormula()" class="bg-purple-600 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-purple-700 transition"><i class="fa-solid fa-plus mr-1"></i> 新增公式</button>
+                </div>
+                <table class="w-full data-table text-sm">
+                    <thead><tr><th class="w-12 text-center">排序</th><th>方法名稱</th><th>區間公式</th><th>絕對上限</th><th>操作</th></tr></thead>
+                    <tbody id="list-current-drug-formulas"></tbody>
+                </table>
+            </div>
         </section>
 
         <section id="formulas" class="tab-content">
