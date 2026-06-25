@@ -220,10 +220,20 @@ window.setupFormulaDrugDropdown = function() {
 window.renderAdminParamPad = function() {
     const pad = document.getElementById('admin-param-pad');
     if(!pad) return;
-    let html = STORE.parameters.map(p => `<button type="button" class="bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-200 rounded px-2 py-1 text-[10px] font-bold shadow-sm transition" onclick="insertParamToFormula('{${p.param_code}}')">${p.param_name} <span class="text-gray-400 font-normal ml-0.5">{${p.param_code}}</span></button>`).join('');
-    html += `<button type="button" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300 rounded px-2 py-1 text-[10px] font-bold shadow-sm transition" onclick="insertParamToFormula('{prescribed}')">處方劑量輸入值 <span class="text-gray-500 font-normal ml-0.5">{prescribed}</span></button>`;
+    
+    // 只渲染參數基本檔中的參數，不再包含 {prescribed}
+    let html = STORE.parameters.map(p => 
+        `<button type="button" class="bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-200 rounded px-2 py-1 text-[10px] font-bold shadow-sm transition" onclick="insertParamToFormula('{${p.param_code}}')">
+            ${p.param_name} <span class="text-gray-400 font-normal ml-0.5">{${p.param_code}}</span>
+        </button>`
+    ).join('');
+    
     pad.innerHTML = html;
-    document.querySelectorAll('.op-btn').forEach(btn => { btn.onclick = function() { insertParamToFormula(' ' + this.innerText + ' '); }; });
+    
+    // 綁定運算子按鈕
+    document.querySelectorAll('.op-btn').forEach(btn => {
+        btn.onclick = function() { insertParamToFormula(' ' + this.innerText + ' '); };
+    });
 };
 
 window.insertParamToFormula = function(text) {
