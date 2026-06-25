@@ -363,6 +363,8 @@ function renderDynamicParameters(formula) {
     }
 }
 
+// ================== [最終整合版：前台計算引擎] ==================
+
 function executeCalculation() {
     if (!currentFormula) return;
     
@@ -376,12 +378,18 @@ function executeCalculation() {
         scopeVals[input.getAttribute('data-code')] = val;
     });
 
-    if (!allFilled && inputs.length > 0) { resetResult(); return; }
-
     const resultEl = document.getElementById('result-value');
     const baseSection = document.getElementById('base-range-section');
     const matrixSection = document.getElementById('matrix-result-section');
     
+    // 【體驗優化】如果參數未填完，直接清空顯示並離開
+    if (!allFilled && inputs.length > 0) { 
+        resultEl.innerText = "--";
+        baseSection.classList.add('hidden');
+        matrixSection.classList.add('hidden');
+        return; 
+    }
+
     calculatedMin = null; calculatedMax = null;
     matrixSection.classList.add('hidden'); matrixSection.innerText = '';
 
@@ -420,7 +428,7 @@ function executeCalculation() {
 
     // 3. 執行進階動態矩陣判斷
     if (currentFormula.parsedMatrixRules && currentFormula.parsedMatrixRules.length > 0) {
-        let matchedResult = "⚠️ 條件未命中";
+        let matchedResult = "⚠️ 數值超出所有設定的安全條件範圍，請重新確認";
         for (let rule of currentFormula.parsedMatrixRules) {
             let evalCondition = rule.condition;
             for(let code in scopeVals) {
