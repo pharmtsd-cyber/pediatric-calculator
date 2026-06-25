@@ -156,16 +156,20 @@
                         </div>
 
                         <div id="calc-result-card" class="hidden bg-blue-50/50 p-5 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-4">
-                            <label class="block text-sm font-bold text-blue-900 border-b border-blue-200 pb-2"><i class="fa-solid fa-laptop-medical mr-1"></i> 系統評估結果</label>
+                            <label class="block text-sm font-bold text-blue-900 border-b border-blue-200 pb-2"><i class="fa-solid fa-laptop-medical mr-1"></i> Step 3. 系統評估結果</label>
                             
                             <div id="base-range-section">
-                                <span class="block text-xs font-bold text-gray-500 mb-1">計算建議劑量：</span>
+                                <span class="block text-xs font-bold text-gray-500 mb-1">公式計算結果：</span>
                                 <div class="flex items-baseline gap-2">
                                     <span id="result-value" class="text-3xl font-extrabold text-[#1B365D]">--</span>
                                     <span id="result-unit" class="text-lg font-bold text-gray-600"></span>
                                 </div>
                             </div>
-                            <div id="matrix-result-section" class="hidden mt-1 p-3 bg-indigo-50 border-l-4 border-indigo-500 rounded text-indigo-900 font-bold text-sm whitespace-pre-wrap shadow-sm"></div>
+                        
+                            <div id="matrix-result-section" class="hidden mt-1 p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded text-indigo-900 shadow-sm">
+                                <div class="text-xs font-bold text-indigo-700 mb-1">依範圍結果的建議劑量說明：</div>
+                                <div id="matrix-result-text" class="font-bold text-sm whitespace-pre-wrap leading-relaxed"></div>
+                            </div>
                         </div>
 
                         <div class="mt-4 flex flex-col gap-3">
