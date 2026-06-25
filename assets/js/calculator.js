@@ -182,6 +182,8 @@ function renderDrugList(drugsToRender) {
     treeContainer.appendChild(ul);
 }
 
+// ================== [替換：前台邏輯 3 個函式] ==================
+
 function selectDrug(drug) {
     currentDrug = drug;
 
@@ -227,15 +229,30 @@ function selectDrug(drug) {
         relContainer.classList.remove('hidden');
     } else relContainer.classList.add('hidden');
 
+    // 【修改】說明卡片預設展開
     const instW = document.getElementById('drug-dose-inst-wrapper');
-    if (drug.dose_instruction && drug.dose_instruction.trim() !== '') { document.getElementById('drug-dose-inst-content').innerText = drug.dose_instruction; instW.classList.remove('hidden'); } else instW.classList.add('hidden');
-    const suppW = document.getElementById('drug-supplemental-wrapper');
-    if (drug.supplemental_info && drug.supplemental_info.trim() !== '') { document.getElementById('drug-supplemental-content').innerText = drug.supplemental_info; suppW.classList.remove('hidden'); } else suppW.classList.add('hidden');
-    const refW = document.getElementById('drug-ref-wrapper');
-    if (drug.reference_url && drug.reference_url.trim() !== '') { document.getElementById('drug-ref-content').innerText = drug.reference_url; refW.classList.remove('hidden'); } else refW.classList.add('hidden');
+    if (drug.dose_instruction && drug.dose_instruction.trim() !== '') { 
+        document.getElementById('drug-dose-inst-content').innerText = drug.dose_instruction; 
+        instW.classList.remove('hidden'); 
+        document.getElementById('drug-dose-inst-content').classList.remove('hidden'); // 預設打開
+        instW.querySelector('button i').classList.add('rotate-180');
+    } else instW.classList.add('hidden');
 
-    document.querySelectorAll('#drug-dose-inst-content, #drug-supplemental-content, #drug-ref-content').forEach(el => el.classList.add('hidden'));
-    document.querySelectorAll('#drug-dose-inst-wrapper button i, #drug-supplemental-wrapper button i, #drug-ref-wrapper button i').forEach(icon => icon.classList.remove('rotate-180'));
+    const suppW = document.getElementById('drug-supplemental-wrapper');
+    if (drug.supplemental_info && drug.supplemental_info.trim() !== '') { 
+        document.getElementById('drug-supplemental-content').innerText = drug.supplemental_info; 
+        suppW.classList.remove('hidden'); 
+        document.getElementById('drug-supplemental-content').classList.remove('hidden'); // 預設打開
+        suppW.querySelector('button i').classList.add('rotate-180');
+    } else suppW.classList.add('hidden');
+
+    const refW = document.getElementById('drug-ref-wrapper');
+    if (drug.reference_url && drug.reference_url.trim() !== '') { 
+        document.getElementById('drug-ref-content').innerText = drug.reference_url; 
+        refW.classList.remove('hidden'); 
+        document.getElementById('drug-ref-content').classList.remove('hidden'); // 預設打開
+        refW.querySelector('button i').classList.add('rotate-180');
+    } else refW.classList.add('hidden');
 
     const targetId = String(drug.drug_id || '').trim().toLowerCase();
     const targetCode = String(drug.drug_code || '').trim().toLowerCase();
@@ -249,16 +266,13 @@ function selectDrug(drug) {
     
     if (drugFormulas.length === 0) { 
         selectEl.innerHTML = '<option value="">(尚未建置計算公式)</option>'; 
-        document.getElementById('dynamic-parameters').classList.add('hidden');
+        document.getElementById('dynamic-parameters-container').classList.add('hidden');
         document.getElementById('formula-remark-card').classList.add('hidden');
-        document.getElementById('formula-remark').innerText = '';
         document.getElementById('absolute-max-alert').classList.add('hidden');
-        document.getElementById('single-max-text').innerText = '';
-        document.getElementById('daily-max-text').innerText = '';
         if (calcResultCard) calcResultCard.classList.add('hidden');
         resetResult(); return; 
     } else {
-        document.getElementById('dynamic-parameters').classList.remove('hidden');
+        document.getElementById('dynamic-parameters-container').classList.remove('hidden');
         if (calcResultCard) calcResultCard.classList.remove('hidden');
         
         drugFormulas.forEach(f => {
@@ -273,22 +287,17 @@ function selectDrug(drug) {
     }
 }
 
-// ================== [替換：前台計算核心 3 個函式] ==================
-
 function renderDynamicParameters(formula) {
     if (!formula) return;
     resetResult();
 
-    // 1. 判斷是否為「矩陣模式」
+    // 解析矩陣規則
     let matrixRules = [];
     try { 
         if (formula.matrix_rules && formula.matrix_rules.trim() !== '' && formula.matrix_rules !== '[]') {
             matrixRules = JSON.parse(formula.matrix_rules); 
         }
     } catch(e) { console.error("矩陣解析失敗", e); }
-    
-    const isMatrix = matrixRules.length > 0;
-    currentFormula.isMatrix = isMatrix;
     currentFormula.parsedMatrixRules = matrixRules;
 
     const remarkCard = document.getElementById('formula-remark-card');
@@ -296,79 +305,59 @@ function renderDynamicParameters(formula) {
     if (safeRemark !== '') {
         document.getElementById('formula-remark').innerText = safeRemark;
         remarkCard.classList.remove('hidden');
-    } else {
-        remarkCard.classList.add('hidden');
-        document.getElementById('formula-remark').innerText = '';
-    }
+    } else remarkCard.classList.add('hidden');
 
-    const calcResultCard = document.getElementById('calc-result-card');
     const minStr = String(formula.formula_min || '').trim();
     const maxStr = String(formula.formula_max || '').trim();
     
-    // 如果是舊版且沒公式，就隱藏
-    if (!isMatrix && minStr === "" && maxStr === "") {
-        if(document.getElementById('dynamic-parameters')) document.getElementById('dynamic-parameters').classList.add('hidden');
-        if(document.getElementById('absolute-max-alert')) document.getElementById('absolute-max-alert').classList.add('hidden');
-        if(calcResultCard) calcResultCard.classList.add('hidden');
-        resetResult(); return; 
-    } else {
-        if(document.getElementById('dynamic-parameters')) document.getElementById('dynamic-parameters').classList.remove('hidden');
-        if(calcResultCard) calcResultCard.classList.remove('hidden');
-    }
-
-    // 矩陣模式不需要顯示獨立單位 (因為單位會寫在文字結果裡)
-    document.getElementById('result-unit').innerText = isMatrix ? '' : (formula.result_unit || ''); 
+    document.getElementById('result-unit').innerText = formula.result_unit || ''; 
     document.querySelectorAll('.prescribed-unit-display').forEach(el => el.innerText = formula.result_unit || '');
 
     const alertBox = document.getElementById('absolute-max-alert'); let hasAlert = false;
+    if (formula.single_max) { document.getElementById('single-max-text').innerText = `單次最大：${formula.single_max} ${formula.single_max_unit||''}`; hasAlert = true;
+    } else document.getElementById('single-max-text').innerText = '';
+    if (formula.daily_max) { document.getElementById('daily-max-text').innerText = `單日最大：${formula.daily_max} ${formula.daily_max_unit||''}`; hasAlert = true;
+    } else document.getElementById('daily-max-text').innerText = '';
     
-    // 矩陣模式時，將單次/單日絕對上限隱藏，交由矩陣自行判斷文字輸出
-    if (!isMatrix) {
-        if (formula.single_max) { document.getElementById('single-max-text').innerText = `單次最大：${formula.single_max} ${formula.single_max_unit||''}`; hasAlert = true;
-        } else document.getElementById('single-max-text').innerText = '';
-        if (formula.daily_max) { document.getElementById('daily-max-text').innerText = `單日最大：${formula.daily_max} ${formula.daily_max_unit||''}`; hasAlert = true;
-        } else document.getElementById('daily-max-text').innerText = '';
-    }
-    if (hasAlert && !isMatrix) alertBox.classList.remove('hidden'); else alertBox.classList.add('hidden');
+    if (hasAlert) alertBox.classList.remove('hidden'); else alertBox.classList.add('hidden');
 
+    // 【核心優化】自動萃取「區間公式」與「矩陣條件」中所用到的所有參數
     const paramContainer = document.getElementById('dynamic-parameters'); paramContainer.innerHTML = '';
-    
-    // 2. 智慧萃取所需參數 (掃描舊版公式 或 新版矩陣的條件與結果)
     const requiredCodes = new Set(); 
     const paramRegex = /{([a-zA-Z0-9_]+)}/g; let match;
 
-    if (isMatrix) {
-        matrixRules.forEach(r => {
-            while ((match = paramRegex.exec(r.condition)) !== null) requiredCodes.add(match[1]);
-            while ((match = paramRegex.exec(r.result)) !== null) requiredCodes.add(match[1]);
-        });
+    const combinedFormula = minStr + " " + maxStr;
+    while ((match = paramRegex.exec(combinedFormula)) !== null) requiredCodes.add(match[1]);
+
+    matrixRules.forEach(r => {
+        while ((match = paramRegex.exec(r.condition)) !== null) requiredCodes.add(match[1]);
+        while ((match = paramRegex.exec(r.result)) !== null) requiredCodes.add(match[1]);
+    });
+
+    if (requiredCodes.size === 0) { 
+        document.getElementById('dynamic-parameters-container').classList.add('hidden');
+        executeCalculation(); return; 
     } else {
-        const combinedFormula = minStr + " " + maxStr;
-        while ((match = paramRegex.exec(combinedFormula)) !== null) requiredCodes.add(match[1]);
+        document.getElementById('dynamic-parameters-container').classList.remove('hidden');
     }
 
-    if (requiredCodes.size === 0) { executeCalculation(); return; }
-
     requiredCodes.forEach(code => {
-        // 排除系統保留字，不需要為處方劑量產生額外輸入框
-        if (code.toLowerCase() === 'prescribed') return; 
+        if (code.toLowerCase() === 'prescribed') return; // 處方劑量是專用輸入框，不在此生成
 
         const paramDef = STORE.parameters.find(p => p.param_code === code);
         const paramName = paramDef ? paramDef.param_name : code; const paramUnit = paramDef ? paramDef.default_unit : '';
         const div = document.createElement('div'); div.className = 'flex flex-col gap-1';
         div.innerHTML = `
-            <label class="text-xs font-bold text-[#1B365D]">${paramName} ${paramUnit ? `(${paramUnit})` : ''}</label>
-            <input type="number" data-code="${code}" step="any" min="0" placeholder="請輸入數值..." class="param-input border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] shadow-inner bg-white">
+            <label class="text-xs font-bold text-gray-700">${paramName} ${paramUnit ? `<span class="text-gray-400">(${paramUnit})</span>` : ''}</label>
+            <input type="number" data-code="${code}" step="any" min="0" placeholder="輸入數值..." class="param-input border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] shadow-inner bg-white">
         `;
         paramContainer.appendChild(div);
     });
 
     document.querySelectorAll('.param-input').forEach(input => input.addEventListener('input', window.debounce(executeCalculation, 100)));
     
-    // 確保處方輸入框變動時，也能觸發矩陣運算 (讓 {prescribed} 參數即時生效)
     const preDoseInput = document.getElementById('prescribed-dose');
     if (preDoseInput) {
-        // 移除舊的綁定，改綁定 executeCalculation
         const newPreDoseInput = preDoseInput.cloneNode(true);
         preDoseInput.parentNode.replaceChild(newPreDoseInput, preDoseInput);
         newPreDoseInput.addEventListener('input', window.debounce(executeCalculation, 100));
@@ -382,67 +371,32 @@ function executeCalculation() {
     let allFilled = true;
     let scopeVals = {};
 
-    // 收集所有參數數值
     inputs.forEach(input => {
         const val = input.value;
         if (val === '') allFilled = false;
         scopeVals[input.getAttribute('data-code')] = val;
     });
 
-    // 收集處方劑量 (給矩陣的 {prescribed} 參數使用)
     const preInput = document.getElementById('prescribed-dose');
     scopeVals['prescribed'] = (preInput && preInput.value !== '') ? preInput.value : 0;
 
     if (!allFilled && inputs.length > 0) { resetResult(); return; }
 
     const resultEl = document.getElementById('result-value');
+    const baseSection = document.getElementById('base-range-section');
+    const matrixSection = document.getElementById('matrix-result-section');
+    
     calculatedMin = null; calculatedMax = null;
     document.getElementById('dose-eval-msg').classList.add('hidden');
+    matrixSection.classList.add('hidden'); matrixSection.innerText = '';
 
-    // 👑 模式 B：全新動態條件矩陣引擎
-    if (currentFormula.isMatrix) {
-        let matchedResult = "⚠️ 數值超出所有設定的安全條件範圍，請重新確認";
-        
-        for (let rule of currentFormula.parsedMatrixRules) {
-            let evalCondition = rule.condition;
-            let evalOutput = rule.result;
-
-            // 參數文字替換
-            for(let code in scopeVals) {
-                const regex = new RegExp(`{${code}}`, 'gi'); // ignore case
-                evalCondition = evalCondition.replace(regex, scopeVals[code]);
-                evalOutput = evalOutput.replace(regex, scopeVals[code]);
-            }
-
-            // 將 JS 的邏輯符號轉換為 math.js 看得懂的格式
-            evalCondition = evalCondition.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
-
-            try {
-                // 如果條件空白，或是 math.js 判定成立 (True)
-                if (evalCondition.trim() === '' || math.evaluate(evalCondition)) {
-                    
-                    // 【魔法功能】解析輸出結果中的 [[數學算式]]
-                    evalOutput = evalOutput.replace(/\[\[(.*?)\]\]/g, (match, expr) => {
-                        try { return Math.round(math.evaluate(expr) * 100) / 100; } catch(e) { return expr; }
-                    });
-
-                    matchedResult = evalOutput;
-                    break; // 只要命中一條，就停止往下找 (由上而下判定)
-                }
-            } catch(e) { console.warn("矩陣條件解析錯誤 (略過此條件):", evalCondition); }
-        }
-
-        resultEl.innerText = matchedResult;
-        resultEl.className = 'text-xl font-bold text-[#1B365D] whitespace-pre-wrap leading-snug'; 
-    } 
-    // ⚙️ 模式 A：傳統數值區間引擎 (兼容舊有資料)
-    else {
-        let fMin = currentFormula.formula_min || '', fMax = currentFormula.formula_max || '';
+    // 1. 執行基礎區間計算 (如果有的話)
+    let fMin = currentFormula.formula_min || '', fMax = currentFormula.formula_max || '';
+    if (fMin.trim() !== '' || fMax.trim() !== '') {
         for(let code in scopeVals) {
             const regex = new RegExp(`{${code}}`, 'gi');
             fMin = fMin.replace(regex, scopeVals[code]); fMax = fMax.replace(regex, scopeVals[code]);
         }
-
         try {
             if (fMin.trim()) calculatedMin = Math.round(math.evaluate(fMin) * 100) / 100;
             if (fMax.trim()) calculatedMax = Math.round(math.evaluate(fMax) * 100) / 100;
@@ -451,11 +405,45 @@ function executeCalculation() {
             else if (calculatedMin !== null) { resultEl.innerText = `${calculatedMin}`; calculatedMax = calculatedMin; }
             else resultEl.innerText = "--";
             
-            resultEl.className = 'text-3xl font-extrabold text-[#1B365D]';
-            checkPrescriptionSafety(); // 傳統模式才執行系統比對防呆
+            baseSection.classList.remove('hidden');
         } catch (error) { resultEl.innerText = "公式錯誤"; }
+    } else {
+        baseSection.classList.add('hidden');
     }
+
+    // 2. 執行進階動態矩陣判斷 (如果有的話)
+    if (currentFormula.parsedMatrixRules && currentFormula.parsedMatrixRules.length > 0) {
+        let matchedResult = "⚠️ 數值超出所有設定的安全條件範圍，請重新確認";
+        
+        for (let rule of currentFormula.parsedMatrixRules) {
+            let evalCondition = rule.condition;
+            let evalOutput = rule.result;
+
+            for(let code in scopeVals) {
+                const regex = new RegExp(`{${code}}`, 'gi'); 
+                evalCondition = evalCondition.replace(regex, scopeVals[code]);
+                evalOutput = evalOutput.replace(regex, scopeVals[code]);
+            }
+            evalCondition = evalCondition.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
+
+            try {
+                if (evalCondition.trim() === '' || math.evaluate(evalCondition)) {
+                    evalOutput = evalOutput.replace(/\[\[(.*?)\]\]/g, (match, expr) => {
+                        try { return Math.round(math.evaluate(expr) * 100) / 100; } catch(e) { return expr; }
+                    });
+                    matchedResult = evalOutput;
+                    break; 
+                }
+            } catch(e) { console.warn("矩陣條件解析錯誤:", evalCondition); }
+        }
+        matrixSection.innerText = matchedResult;
+        matrixSection.classList.remove('hidden');
+    }
+
+    // 3. 執行傳統處方比對防呆
+    checkPrescriptionSafety();
 }
+// =======================================================
 
 function checkPrescriptionSafety() {
     // 矩陣模式由引擎自己處理，不使用此傳統防呆邏輯
