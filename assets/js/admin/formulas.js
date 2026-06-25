@@ -1,15 +1,14 @@
 window.matrixRules = []; // 全域變數：暫存當前公式的矩陣規則
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 綁定輸入框游標追蹤，供參數按鈕插入使用
+    // 綁定輸入框游標追蹤
     document.querySelectorAll('#admin-formula-min, #admin-formula-max').forEach(el => {
         el.addEventListener('focus', function() { window.lastFocusedFormulaInput = this; });
         el.addEventListener('click', function() { window.lastFocusedFormulaInput = this; });
         el.addEventListener('keyup', function() { window.lastFocusedFormulaInput = this; });
     });
     
-    // 初始化參數按鈕面板
-    renderAdminParamPad();
+    // ⚠️ 已經將 renderAdminParamPad() 移出，避免提早渲染
     setupFormulaDrugDropdown();
 });
 
@@ -163,6 +162,9 @@ window.resetFormulaForm = function() {
     window.matrixRules = [];
     window.toggleFormulaMode();
     window.renderMatrixRulesUI();
+
+    // 【新增這行】確保每次進入表單時，參數基本檔已經載入完畢再畫出按鈕
+    window.renderAdminParamPad();
 };
 
 // 【核心 4】綁定與儲存
