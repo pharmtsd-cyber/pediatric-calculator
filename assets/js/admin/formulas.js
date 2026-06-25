@@ -99,11 +99,7 @@ window.goToFormulaEdit = function(drugId, formulaId) {
 
     // 直接讀取矩陣資料
     if (f.matrix_rules && f.matrix_rules.trim() !== '' && f.matrix_rules !== '[]') {
-        try {
-            window.matrixRules = JSON.parse(f.matrix_rules);
-        } catch(e) {
-            window.matrixRules = [];
-        }
+        try { window.matrixRules = JSON.parse(f.matrix_rules); } catch(e) { window.matrixRules = []; }
     } else {
         window.matrixRules = [];
     }
