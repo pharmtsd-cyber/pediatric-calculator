@@ -136,37 +136,45 @@
                             </div>
                         </div>
 
-                        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                            <label class="block text-xs font-bold text-gray-700 mb-1.5">請選擇臨床適應症 / 年齡段 / 計算方法：</label>
-                            <select id="formula-select" class="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] bg-white"></select>
+                        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-[#1B365D]">
+                            <label class="block text-sm font-bold text-[#1B365D] mb-2"><i class="fa-solid fa-list-check mr-1"></i> Step 1. 選擇臨床適應症 / 年齡段 / 計算方法</label>
+                            <select id="formula-select" class="w-full border border-gray-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] bg-gray-50 font-bold"></select>
                             
-                            <div id="formula-remark-card" class="hidden mt-3 bg-amber-50 border-l-4 border-amber-500 p-3 rounded text-amber-900 shadow-sm text-xs">
+                            <div id="formula-remark-card" class="hidden mt-3 bg-amber-50 border border-amber-200 p-3 rounded text-amber-900 shadow-sm text-xs">
                                 <div class="font-bold mb-1 flex items-center gap-1"><i class="fa-solid fa-circle-info text-amber-600"></i> 臨床指引與備註說明：</div>
                                 <div id="formula-remark" class="whitespace-pre-wrap leading-relaxed"></div>
                             </div>
                         </div>
 
-                        <div id="absolute-max-alert" class="hidden bg-red-50 border border-red-200 p-2 rounded text-xs text-red-700 font-bold flex gap-4 shadow-sm">
+                        <div id="dynamic-parameters-container" class="hidden bg-white p-4 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-blue-400">
+                            <label class="block text-sm font-bold text-blue-800 mb-3"><i class="fa-solid fa-keyboard mr-1"></i> Step 2. 輸入病患生理參數</label>
+                            <div id="dynamic-parameters" class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-1"></div>
+                        </div>
+
+                        <div id="absolute-max-alert" class="hidden bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-700 font-bold flex gap-4 shadow-sm">
                             <span id="single-max-text"></span><span id="daily-max-text"></span>
                         </div>
 
-                        <div id="dynamic-parameters" class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-200 pt-4 px-2"></div>
-
-                        <div id="calc-result-card" class="mt-2 border-t pt-5 bg-blue-50/50 p-5 rounded-lg border border-blue-100 flex flex-col gap-4 shadow-sm">
-                            <div>
-                                <span class="block text-xs font-bold text-gray-600 mb-1">系統計算建議區間：</span>
+                        <div id="calc-result-card" class="hidden bg-blue-50/50 p-5 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-4">
+                            <label class="block text-sm font-bold text-blue-900 border-b border-blue-200 pb-2"><i class="fa-solid fa-laptop-medical mr-1"></i> Step 3. 系統評估結果</label>
+                            
+                            <div id="base-range-section">
+                                <span class="block text-xs font-bold text-gray-500 mb-1">系統計算建議區間：</span>
                                 <div class="flex items-baseline gap-2">
                                     <span id="result-value" class="text-3xl font-extrabold text-[#1B365D]">--</span>
                                     <span id="result-unit" class="text-sm font-bold text-gray-600"></span>
                                 </div>
                             </div>
-                            <div class="border-t border-blue-200 pt-4" id="prescription-compare-section">
-                                <label class="block text-xs font-bold text-blue-800 mb-1"><i class="fa-solid fa-user-doctor mr-1"></i>醫師開立處方劑量比對 (選填)</label>
+
+                            <div id="matrix-result-section" class="hidden mt-1 p-3 bg-indigo-100 border-l-4 border-indigo-500 rounded text-indigo-900 font-bold text-sm whitespace-pre-wrap shadow-sm"></div>
+
+                            <div class="border-t border-blue-200 pt-4 mt-2" id="prescription-compare-section">
+                                <label class="block text-xs font-bold text-blue-800 mb-2"><i class="fa-solid fa-user-doctor mr-1"></i>醫師開立處方劑量比對 (選填) <span class="font-normal text-gray-500 ml-1">輸入後系統將自動比對上述區間或條件</span></label>
                                 <div class="flex items-center gap-2">
                                     <input type="number" id="prescribed-dose" step="any" placeholder="輸入處方數字..." class="border border-blue-300 rounded p-2 text-sm focus:outline-none focus:border-[#1B365D] w-48 shadow-inner bg-white">
                                     <span class="text-sm font-bold text-gray-600 prescribed-unit-display"></span>
                                 </div>
-                                <div id="dose-eval-msg" class="text-sm font-bold mt-2 hidden flex items-center gap-1.5 p-2 rounded"></div>
+                                <div id="dose-eval-msg" class="text-sm font-bold mt-3 hidden flex items-center gap-1.5 p-2.5 rounded shadow-sm"></div>
                             </div>
                         </div>
 
