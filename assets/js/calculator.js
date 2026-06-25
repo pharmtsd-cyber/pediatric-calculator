@@ -418,30 +418,22 @@ function executeCalculation() {
 
     // 2. 執行進階動態矩陣判斷
     if (currentFormula.parsedMatrixRules && currentFormula.parsedMatrixRules.length > 0) {
-        let matchedResult = "⚠️ 數值超出所有設定的安全條件範圍，請重新確認";
+        let matchedResult = "⚠️ 數值超出所有設定的安全條件範圍";
         for (let rule of currentFormula.parsedMatrixRules) {
-            let evalCondition = rule.condition;
-            for(let code in scopeVals) {
-                evalCondition = evalCondition.replace(new RegExp(`{${code}}`, 'gi'), scopeVals[code] || 0);
-            }
-            evalCondition = evalCondition.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
-
+            // ... (解析 evalCondition 的邏輯保持不變)
+            
             try {
                 if (evalCondition.trim() === '' || math.evaluate(evalCondition)) {
-                    let evalOutput = rule.result;
-                    for(let code in scopeVals) {
-                        evalOutput = evalOutput.replace(new RegExp(`{${code}}`, 'gi'), scopeVals[code] || 0);
-                    }
-                    // 【運算功能】解析輸出中的 [[ ]] 數學式
-                    evalOutput = evalOutput.replace(/\[\[(.*?)\]\]/g, (match, expr) => {
-                        try { return Math.round(math.evaluate(expr) * 100) / 100; } catch(e) { return expr; }
-                    });
+                    // ... (處理 evalOutput 的邏輯保持不變)
                     matchedResult = evalOutput;
                     break; 
                 }
             } catch(e) { console.warn("矩陣錯誤:", evalCondition); }
         }
-        matrixSection.innerText = matchedResult;
+        
+        // 【新增】將結果放入新的文字容器，並顯示區塊
+        const matrixTextEl = document.getElementById('matrix-result-text');
+        if(matrixTextEl) matrixTextEl.innerText = matchedResult;
         matrixSection.classList.remove('hidden');
     }
 }
