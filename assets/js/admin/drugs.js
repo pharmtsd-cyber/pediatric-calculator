@@ -155,9 +155,42 @@ window.toggleDrugStatus = async function(drugId, currentStatus, event) {
     await sendPost(payload); 
 };
 
-window.returnToDashboard = function() {
+window.returnToDashboard = function(highlightId = null) {
     switchTab('dashboard');
-    scrollToTop();
+    
+    // 【新增】若沒有指定 ID (例如點擊「取消返回」按鈕時)，自動抓取畫面上編輯中的藥品 ID
+    if (!highlightId) {
+        const formDrugId = document.getElementById('drug-id');
+        if (formDrugId && formDrugId.value) {
+            highlightId = formDrugId.value;
+        }
+    }
+
+    // 強制重繪總覽清單，確保 DOM 節點是最新的
+    if (typeof renderDrugsList === 'function') renderDrugsList();
+
+    if (highlightId) {
+        // 給予一點延遲，確保畫面渲染完畢後再滾動
+        setTimeout(() => {
+            const row = document.getElementById(`dash-row-${highlightId}`);
+            if (row) {
+                // 自動將該筆藥品滾動到畫面正中央
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 加入醒目的琥珀色背景
+                row.classList.add('!bg-amber-100');
+                
+                // 3 秒後自動淡出背景色 (搭配我們在 renderDrugsList 加的 duration-500)
+                setTimeout(() => {
+                    row.classList.remove('!bg-amber-100');
+                }, 3000);
+            } else {
+                scrollToTop();
+            }
+        }, 300);
+    } else {
+        scrollToTop();
+    }
 };
 
 window.goToAddDrug = function() {
@@ -346,7 +379,9 @@ window.saveDrug = async function() {
     
     if(!payload.drug_code || !payload.generic_name || !payload.domain) return alert("請務必填寫：【所屬科別】、【藥品代碼】與【一般名稱(原學名)】！");
     await sendPost(payload); 
-    returnToDashboard(); 
+    
+    // 【新增】明確告訴系統回到總覽時要追蹤這筆藥品
+    returnToDashboard(payload.drug_id || document.getElementById('drug-id').value); 
 };
 
 window.removeCustomTag = function(type, val) {
