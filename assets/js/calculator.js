@@ -429,7 +429,8 @@ window.executeCalculation = function() {
 
     if(matrixSection) {
         matrixSection.classList.add('hidden'); 
-        matrixSection.innerText = '';
+        const matrixTextEl = document.getElementById('matrix-result-text');
+        if (matrixTextEl) matrixTextEl.innerText = '';
     }
 
     // --- 1. 使用定義在 config.js 的統一引擎計算基礎區間 ---
