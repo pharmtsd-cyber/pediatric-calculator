@@ -289,6 +289,7 @@ window.applyTemplate = function(formulaId) {
     document.getElementById('modal-template').classList.add('hidden');
 };
 
+// 純粹為了同步輸入內容的預覽，不執行計算
 window.updatePreview = function() {
     const minVal = document.getElementById('admin-formula-min').value;
     const maxVal = document.getElementById('admin-formula-max').value;
@@ -298,7 +299,7 @@ window.updatePreview = function() {
     }
 };
 
-// 確保綁定
+// 綁定輸入事件
 document.addEventListener('DOMContentLoaded', () => {
     const minInput = document.getElementById('admin-formula-min');
     const maxInput = document.getElementById('admin-formula-max');
