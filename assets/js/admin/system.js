@@ -158,11 +158,11 @@ window.editParameter = function(code) {
     document.getElementById('param-name').value = p.param_name; 
     document.getElementById('param-unit').value = p.default_unit || '';
     
-    // 載入進階選單設定
+    // 【新增】載入時把選項設定填回 UI
     if (document.getElementById('param-type')) {
         document.getElementById('param-type').value = p.param_type || 'INPUT';
         document.getElementById('param-options').value = p.param_options || '';
-        window.toggleParamOptionsUI();
+        if(typeof window.toggleParamOptionsUI === 'function') window.toggleParamOptionsUI();
     }
 
     document.getElementById('btn-save-param').innerText = "更新參數"; 
