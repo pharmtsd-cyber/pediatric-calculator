@@ -75,12 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
         await sendPost({ action: 'saveStaff', emp_id: id, name: name, role: document.getElementById('staff-role').value, status: document.getElementById('staff-status').value });
         document.getElementById('staff-id').value = ''; document.getElementById('staff-name').value = '';
     });
-bind('btn-save-param', async () => {
+    bind('btn-save-param', async () => {
         const mode = document.getElementById('param-mode').value;
         const code = document.getElementById('param-code').value.trim();
         const name = document.getElementById('param-name').value.trim();
-        const type = document.getElementById('param-type').value;
-        const options = document.getElementById('param-options').value.trim();
+        
+        // 【新增】抓取下拉選單的設定值
+        const type = document.getElementById('param-type') ? document.getElementById('param-type').value : 'INPUT';
+        const options = document.getElementById('param-options') ? document.getElementById('param-options').value.trim() : '';
 
         if(!code || !name) return alert("必填"); 
         if(!/^[a-zA-Z0-9_]+$/.test(code)) return alert("代碼限英文與底線");
@@ -93,8 +95,8 @@ bind('btn-save-param', async () => {
             param_code: code, 
             param_name: name, 
             default_unit: document.getElementById('param-unit').value,
-            param_type: type,
-            param_options: options
+            param_type: type,      // 送出類型
+            param_options: options // 送出選項
         }); 
         document.getElementById('btn-cancel-param').click();
     });
@@ -106,13 +108,11 @@ bind('btn-save-param', async () => {
         document.getElementById('param-name').value = ''; 
         document.getElementById('param-unit').value = '';
         
-        // 恢復預設選項
-        if (document.getElementById('param-type')) {
-            document.getElementById('param-type').value = 'INPUT';
-            document.getElementById('param-options').value = '';
-            window.toggleParamOptionsUI();
-        }
-
+        // 【新增】重置下拉選單設定
+        if(document.getElementById('param-type')) document.getElementById('param-type').value = 'INPUT';
+        if(document.getElementById('param-options')) document.getElementById('param-options').value = '';
+        if(typeof window.toggleParamOptionsUI === 'function') window.toggleParamOptionsUI();
+        
         document.getElementById('btn-save-param').innerText = "新增參數"; 
         document.getElementById('btn-cancel-param').classList.add('hidden');
     });
