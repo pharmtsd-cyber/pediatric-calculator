@@ -358,32 +358,30 @@ window.calculatePreview = function() {
     const maxRaw = document.getElementById('admin-formula-max').value;
     const inputs = document.querySelectorAll('#test-params-container input');
     
-    // 建立參數對應表
+    // 1. 建立參數映射表
     let scope = {};
     inputs.forEach(i => scope[i.getAttribute('data-param')] = parseFloat(i.value) || 0);
 
-    // 核心修正：讓 calc 函式執行完整的 JavaScript 計算
+    // 2. 真正的計算邏輯：解析並執行
     const calc = (str) => {
+        if (!str || str.trim() === '') return '--';
         try {
-            if (!str) return '--';
-            // 1. 將 {參數名稱} 替換為實際數值
-            let expression = str.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, c) => scope[c] || 0);
-            
-            // 2. 使用 new Function 執行算術運算 (例如將 "60 * 1.5" 轉為 90)
-            return new Function('return ' + expression)();
-        } catch(e) { 
-            return '公式錯誤'; 
-        }
+            // 先把 {變數} 換成實際數值
+            let s = str.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, c) => scope[c] ?? 0);
+            // 把 x 轉成 * (避免文字錯誤)
+            s = s.replace(/x/gi, '*');
+            // 【核心修正】使用 new Function 執行運算，這會強制 JavaScript 計算數值結果
+            return new Function('return ' + s)();
+        } catch(e) { return '公式錯誤'; }
     };
 
+    // 3. 取得計算後的數字
     const vMin = calc(minRaw);
     const vMax = calc(maxRaw);
     
-    // 更新介面顯示結果
-    const displayEl = document.getElementById('preview-result-value');
-    if (displayEl) {
-        displayEl.innerText = `${vMin} / ${vMax}`;
-    }
+    // 4. 顯示結果 (保留兩位小數)
+    const display = (val) => (typeof val === 'number') ? val.toFixed(2) : val;
+    document.getElementById('preview-result-value').innerText = `Min: ${display(vMin)} | Max: ${display(vMax)}`;
 };
 
 // 3. 綁定事件
