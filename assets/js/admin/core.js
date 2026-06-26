@@ -141,8 +141,11 @@ function handleUrlJump() {
             // 情境一：點選「資訊修改」，直接進入藥品詳細編輯頁
             if(typeof window.viewDrug === 'function') window.viewDrug(drugId);
         }
-        // 清理網址，避免重新整理時重複觸發
-        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // ⚠️ 【關鍵修復】：已經將這行 replaceState 註解刪除！
+        // 保留網址列的參數，避免打斷 Tailwind CSS v4 CDN 的背景模組載入，
+        // 同時也帶來好處：如果使用者重新整理網頁，依然能準確回到該藥品的編輯畫面。
+        // window.history.replaceState({}, document.title, window.location.pathname);
     }
 }
 
