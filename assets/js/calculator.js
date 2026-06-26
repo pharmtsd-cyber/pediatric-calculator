@@ -407,6 +407,7 @@ function executeCalculation() {
     let allFilled = true;
     let scopeVals = {};
 
+    // 收集使用者輸入的值
     inputs.forEach(input => {
         const val = input.value;
         if (val === '') allFilled = false;
@@ -414,61 +415,77 @@ function executeCalculation() {
     });
 
     const resultEl = document.getElementById('result-value');
+    const resultUnitEl = document.getElementById('result-unit');
     const baseSection = document.getElementById('base-range-section');
     const matrixSection = document.getElementById('matrix-result-section');
     
-    // 【體驗優化】參數未填完時，清除結果顯示
+    // 如果參數沒填完，清空並隱藏區塊
     if (!allFilled && inputs.length > 0) { 
-        resultEl.innerText = "--";
-        baseSection.classList.add('hidden');
-        matrixSection.classList.add('hidden');
+        if(resultEl) resultEl.innerText = "--";
+        if(resultUnitEl) resultUnitEl.innerText = "";
+        if(baseSection) baseSection.classList.add('hidden');
+        if(matrixSection) matrixSection.classList.add('hidden');
         return; 
     }
 
-    let calculatedMin = null; 
-    let calculatedMax = null;
-    matrixSection.classList.add('hidden'); 
-    matrixSection.innerText = '';
+    if(matrixSection) {
+        matrixSection.classList.add('hidden'); 
+        matrixSection.innerText = '';
+    }
 
-    // 協助計算公式 (支援參數替換)
+    // --- 超強健數學解析引擎 ---
     const evalFormula = (f) => {
         if (!f || f.trim() === '') return null;
         let str = f;
+        
+        // 1. 替換已知變數
         for(let code in scopeVals) {
             str = str.replace(new RegExp(`{${code}}`, 'gi'), scopeVals[code] || 0);
         }
-        try { return Math.round(math.evaluate(str) * 100) / 100; } catch(e) { return null; }
+        
+        // 2. 【強力防呆】如果還有沒被替換掉的變數 (例如打錯字)，強制轉成 0，避免引擎崩潰隱藏畫面
+        str = str.replace(/{[a-zA-Z0-9_]+}/g, '0');
+        
+        try { 
+            return Math.round(math.evaluate(str) * 100) / 100; 
+        } catch(e) { 
+            console.warn("公式運算失敗，請檢查語法:", f, "-> 解析後:", str, e); 
+            return null; 
+        }
     };
 
-    // 1. 執行基礎區間計算
-    calculatedMin = evalFormula(currentFormula.formula_min);
-    calculatedMax = evalFormula(currentFormula.formula_max);
-    
-    // ==========================================
-    // 【新增】將基礎公式的計算結果，變成虛擬變數供矩陣使用
-    // ==========================================
+    // --- 1. 執行基礎區間計算 (依序計算，讓 Max 可以吃到 Min) ---
+    let calculatedMin = evalFormula(currentFormula.formula_min);
     scopeVals['min'] = calculatedMin !== null ? calculatedMin : 0;
+
+    let calculatedMax = evalFormula(currentFormula.formula_max);
     scopeVals['max'] = calculatedMax !== null ? calculatedMax : 0;
 
-    if (calculatedMin !== null || calculatedMax !== null) {
-        if (calculatedMin !== null && calculatedMax !== null) resultEl.innerText = `${calculatedMin} ~ ${calculatedMax}`;
-        else resultEl.innerText = `${calculatedMin !== null ? calculatedMin : calculatedMax}`;
-        baseSection.classList.remove('hidden');
-    } else {
-        baseSection.classList.add('hidden');
+    // 顯示基礎結果
+    if (baseSection && resultEl) {
+        if (calculatedMin !== null || calculatedMax !== null) {
+            if (calculatedMin !== null && calculatedMax !== null) resultEl.innerText = `${calculatedMin} ~ ${calculatedMax}`;
+            else resultEl.innerText = `${calculatedMin !== null ? calculatedMin : calculatedMax}`;
+            
+            if(resultUnitEl) resultUnitEl.innerText = currentFormula.result_unit || '';
+            baseSection.classList.remove('hidden');
+        } else {
+            // 只有在後台真的把 min 跟 max 公式「完全留空」時，這裡才會隱藏
+            baseSection.classList.add('hidden');
+        }
     }
 
-    // 2. 執行進階動態矩陣判斷 (支援多重命中)
+    // --- 2. 執行進階動態矩陣判斷 (支援多重命中) ---
     if (currentFormula.parsedMatrixRules && currentFormula.parsedMatrixRules.length > 0) {
-        let matchedResults = []; // 用陣列來收集所有命中的結果
+        let matchedResults = []; 
         
         for (let rule of currentFormula.parsedMatrixRules) {
             let evalCondition = rule.condition;
             
             for(let code in scopeVals) {
-                const regex = new RegExp(`{${code}}`, 'gi');
-                evalCondition = evalCondition.replace(regex, scopeVals[code] || 0);
+                evalCondition = evalCondition.replace(new RegExp(`{${code}}`, 'gi'), scopeVals[code] || 0);
             }
+            evalCondition = evalCondition.replace(/{[a-zA-Z0-9_]+}/g, '0'); // 防呆
             
             let sanitizedCondition = evalCondition.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
 
@@ -476,20 +493,19 @@ function executeCalculation() {
                 if (sanitizedCondition.trim() === '' || math.evaluate(sanitizedCondition)) {
                     let evalOutput = rule.result;
                     for(let code in scopeVals) {
-                        const regex = new RegExp(`{${code}}`, 'gi');
-                        evalOutput = evalOutput.replace(regex, scopeVals[code] || 0);
+                        evalOutput = evalOutput.replace(new RegExp(`{${code}}`, 'gi'), scopeVals[code] || 0);
                     }
                     evalOutput = evalOutput.replace(/\[\[(.*?)\]\]/g, (match, expr) => {
+                        expr = expr.replace(/{[a-zA-Z0-9_]+}/g, '0'); // 防呆
                         try { return Math.round(math.evaluate(expr) * 100) / 100; } catch(e) { return expr; }
                     });
                     
-                    // 將算出的結果推入陣列中
                     matchedResults.push(evalOutput);
                 }
             } catch(e) { console.warn("矩陣判定錯誤:", sanitizedCondition, e); }
         }
         
-        // 將所有命中的結果用分隔線組合起來
+        // 組合多重結果
         let finalResult = matchedResults.length > 0 
             ? matchedResults.join('\n\n------------------------\n\n') 
             : "⚠️ 數值未命中任何設定的條件範圍";
@@ -497,11 +513,11 @@ function executeCalculation() {
         const matrixTextEl = document.getElementById('matrix-result-text');
         if (matrixTextEl) {
             matrixTextEl.innerText = finalResult;
-        } else {
-            // 防呆：如果前端 HTML 忘記改成 matrix-result-text，依然能正常顯示
+        } else if (matrixSection) {
             matrixSection.innerText = finalResult;
         }
-        matrixSection.classList.remove('hidden');
+        
+        if (matrixSection) matrixSection.classList.remove('hidden');
     }
 }
 
