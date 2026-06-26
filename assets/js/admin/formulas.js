@@ -289,53 +289,16 @@ window.applyTemplate = function(formulaId) {
     document.getElementById('modal-template').classList.add('hidden');
 };
 
-// 純粹為了同步輸入內容的預覽，不執行計算
-window.updatePreview = function() {
-    const minVal = document.getElementById('admin-formula-min').value;
-    const maxVal = document.getElementById('admin-formula-max').value;
-    const container = document.getElementById('preview-result-container');
-    if (container) {
-        container.innerHTML = `Min: <span class="text-blue-600">${minVal || '--'}</span><br>Max: <span class="text-blue-600">${maxVal || '--'}</span>`;
-    }
-};
+// --- [公式編輯即時預覽功能] ---
 
-// 綁定輸入事件
-document.addEventListener('DOMContentLoaded', () => {
-    const minInput = document.getElementById('admin-formula-min');
-    const maxInput = document.getElementById('admin-formula-max');
-    if(minInput) minInput.addEventListener('input', window.updatePreview);
-    if(maxInput) maxInput.addEventListener('input', window.updatePreview);
-});
-
-window.initFormulaPreview = function() {
-    const minRaw = document.getElementById('admin-formula-min').value;
-    const maxRaw = document.getElementById('admin-formula-max').value;
-    const container = document.getElementById('test-params-container');
-    container.innerHTML = '';
-    
-    // 找出所有需要的變數 (例如 {weight_KG})
-    const needed = new Set([...minRaw.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map(m => m[1])
-                    .concat([...maxRaw.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map(m => m[1])));
-
-    needed.forEach(code => {
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.placeholder = code;
-        input.className = 'w-20 border border-gray-400 rounded p-1 text-xs';
-        input.oninput = window.calculatePreview; // 輸入就計算
-        input.setAttribute('data-param', code);
-        container.appendChild(input);
-    });
-};
-
-// 1. 初始化測試參數輸入框 (當公式內容改變時自動掃描變數)
+// 1. 偵測公式變更，重新生成參數輸入框
 window.initFormulaPreview = function() {
     const minRaw = document.getElementById('admin-formula-min').value;
     const maxRaw = document.getElementById('admin-formula-max').value;
     const container = document.getElementById('test-params-container');
     if (!container) return;
     
-    // 從公式字串中抓出 {xxx} 格式的變數
+    // 找出所有 {參數}
     const needed = new Set([...minRaw.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map(m => m[1])
                     .concat([...maxRaw.matchAll(/\{([a-zA-Z0-9_]+)\}/g)].map(m => m[1])));
 
@@ -343,48 +306,42 @@ window.initFormulaPreview = function() {
     needed.forEach(code => {
         const div = document.createElement('div');
         div.className = "flex flex-col";
-        div.innerHTML = `<label class="text-[9px] font-bold text-gray-500">${code}</label>
-                         <input type="number" class="w-16 border border-gray-300 rounded p-1 text-xs" data-param="${code}" placeholder="數值">`;
-        container.appendChild(div);
-        // 綁定輸入事件，只要數值變更就重新計算
+        div.innerHTML = `<label class="text-[9px] font-bold text-gray-500 uppercase">${code}</label>
+                         <input type="number" class="w-20 border border-gray-300 rounded p-1 text-xs" data-param="${code}" placeholder="數值">`;
         div.querySelector('input').addEventListener('input', window.calculatePreview);
+        container.appendChild(div);
     });
-    window.calculatePreview(); // 初始化時算一次
+    window.calculatePreview(); 
 };
 
-// 2. 執行計算 (顯示結果)
+// 2. 執行數值計算
 window.calculatePreview = function() {
     const minRaw = document.getElementById('admin-formula-min').value;
     const maxRaw = document.getElementById('admin-formula-max').value;
     const inputs = document.querySelectorAll('#test-params-container input');
+    const displayEl = document.getElementById('preview-result-value');
+    if (!displayEl) return;
     
-    // 1. 建立參數映射表
     let scope = {};
     inputs.forEach(i => scope[i.getAttribute('data-param')] = parseFloat(i.value) || 0);
 
-    // 2. 真正的計算邏輯：解析並執行
     const calc = (str) => {
         if (!str || str.trim() === '') return '--';
         try {
-            // 先把 {變數} 換成實際數值
-            let s = str.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, c) => scope[c] ?? 0);
-            // 把 x 轉成 * (避免文字錯誤)
-            s = s.replace(/x/gi, '*');
-            // 【核心修正】使用 new Function 執行運算，這會強制 JavaScript 計算數值結果
+            // 替換參數並轉乘號
+            let s = str.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, c) => scope[c] ?? 0).replace(/x/gi, '*');
             return new Function('return ' + s)();
         } catch(e) { return '公式錯誤'; }
     };
 
-    // 3. 取得計算後的數字
     const vMin = calc(minRaw);
     const vMax = calc(maxRaw);
     
-    // 4. 顯示結果 (保留兩位小數)
     const display = (val) => (typeof val === 'number') ? val.toFixed(2) : val;
-    document.getElementById('preview-result-value').innerText = `Min: ${display(vMin)} | Max: ${display(vMax)}`;
+    displayEl.innerText = `Min: ${display(vMin)} | Max: ${display(vMax)}`;
 };
 
-// 3. 綁定事件
+// 3. 綁定事件 (加入檢查避免對 null 綁定)
 document.addEventListener('DOMContentLoaded', () => {
     const minEl = document.getElementById('admin-formula-min');
     const maxEl = document.getElementById('admin-formula-max');
