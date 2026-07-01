@@ -66,47 +66,33 @@ window.toggleAccordion = function(contentId, btnElement) {
 async function initializeCalculator() {
     const loadingStatus = document.getElementById('loading-status');
     try {
-        // 【優化】前台也改為單一請求，避免與後台跳轉時發生請求碰撞
-        const data = await fetchFromGAS('getAllData');
-
-        if (data) {
-            STORE.drugs = data.drugs || []; 
-            STORE.parameters = data.parameters || []; 
-            STORE.formulas = data.formulas || [];
-            STORE.categories = data.categories || []; 
-            STORE.announcements = data.announcements || [];
-            
-            STORE.settings = {}; 
-            if (data.settings) {
-                data.settings.forEach(s => STORE.settings[s.setting_key] = s.setting_value);
-            }
-            
-            renderHomeContent(); 
-            setupFilters(); 
-            applyFilters();
-
-            // 處理跳轉狀態恢復
-            const savedStateStr = localStorage.getItem('pharma_front_state');
-            if (savedStateStr) {
-                try {
-                    const savedState = JSON.parse(savedStateStr);
-                    if (savedState && savedState.domain && savedState.domain !== 'home') {
-                        const tab = document.querySelector(`.front-nav[data-target="${savedState.domain}"]`);
-                        if (tab) tab.click(); 
-                    }
-                    if (savedState && savedState.drugId) {
+        // 直接使用 core.js 的極速快取引擎 (0.01 秒瞬間載入)
+        await window.loadAllData();
+        
+        // 恢復前次瀏覽狀態
+        const savedStateStr = localStorage.getItem('pharma_front_state');
+        if (savedStateStr) {
+            try {
+                const savedState = JSON.parse(savedStateStr);
+                if (savedState && savedState.domain && savedState.domain !== 'home') {
+                    const tab = document.querySelector(`.front-nav[data-target="${savedState.domain}"]`);
+                    if (tab) tab.click(); 
+                }
+                if (savedState && savedState.drugId) {
+                    // 等待 UI 渲染完畢後自動選取藥品
+                    setTimeout(() => {
                         const d = STORE.drugs.find(x => String(x.drug_id) === String(savedState.drugId));
-                        if (d) setTimeout(() => selectDrug(d), 300);
-                    }
-                } catch(e) { console.error(e); }
-                localStorage.removeItem('pharma_front_state');
-            }
-        } else {
-            loadingStatus.innerText = "資料載入失敗，請確認 API 網址。"; 
-            loadingStatus.classList.add('text-red-500');
+                        if (d) selectDrug(d);
+                    }, 100);
+                }
+            } catch(e) { console.error(e); }
+            localStorage.removeItem('pharma_front_state');
         }
     } catch (error) { 
-        loadingStatus.innerText = "系統發生錯誤。"; 
+        if(loadingStatus) {
+            loadingStatus.innerText = "系統資料載入發生錯誤。"; 
+            loadingStatus.classList.add('text-red-500');
+        }
     }
 }
 
