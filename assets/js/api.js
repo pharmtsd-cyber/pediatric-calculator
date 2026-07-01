@@ -1,19 +1,23 @@
+/**
+ * 統一發送 GET 請求到 GAS (具備轉址防呆機制)
+ */
 async function fetchFromGAS(action) {
-    if (!CONFIG.GAS_API_URL) return null;
-
+    if (!CONFIG.GAS_API_URL) {
+        console.error("尚未設定 GAS API 網址");
+        return null;
+    }
     try {
-        // 加入 mode: 'cors' 與 credentials: 'omit'
         const response = await fetch(`${CONFIG.GAS_API_URL}?action=${action}`, {
             method: 'GET',
-            mode: 'cors',         // 明確要求跨域資源共享
-            credentials: 'omit'   // 排除 Cookie，防止 Google 因為帳號衝突而轉址
+            mode: 'cors'
         });
         
         if (!response.ok) return null;
 
         const text = await response.text();
+        // 防呆：如果 Google 伺服器因為權限阻擋而回傳網頁，在此攔截
         if (text.trim().startsWith('<')) {
-            console.error("API 被伺服器攔截 (重導向)");
+            console.error(`API [${action}] 被伺服器攔截 (可能是 302 重導向)`);
             return null;
         }
 
