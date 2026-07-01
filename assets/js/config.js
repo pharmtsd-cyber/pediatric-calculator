@@ -19,23 +19,30 @@ const STORE = {
 window.sharedCalc = function(str, scope) {
     if (!str || String(str).trim() === '') return null;
     try {
-        // 正規化邏輯統一在此：x轉*，<>轉!=，所有括號轉小括號
-        let s = String(str).replace(/x/gi, '*').replace(/<>/g, '!=').replace(/\[/g, '(').replace(/\]/g, ')');
-        
-        // 變數替換 (依照傳入的 scope)
+        let s = String(str);
+
+        // 步驟 1：優先把所有 {變數} 換成真實數值！
+        // 這樣 {max} 就會安全變成數字 (例如 48)，不會被後續的替換破壞。
         for (let code in scope) {
-            // 如果沒填數值預設為 0
             const val = (scope[code] === '' || isNaN(scope[code])) ? 0 : scope[code];
             s = s.replace(new RegExp(`\\{${code}\\}`, 'gi'), val);
         }
         
-        // 剩下的未替換變數強迫補 0，避免 eval 壞掉
+        // 將剩下的未定義變數強迫補 0
         s = s.replace(/{[a-zA-Z0-9_]+}/g, '0');
+
+        // 步驟 2：變數都變成數字後，再來安全地做數學與邏輯符號的轉換
+        s = s.replace(/x/gi, '*') // 現在不會誤傷到 {max} 裡的 x 了
+             .replace(/<>/g, '!=')
+             .replace(/\[/g, '(')
+             .replace(/\]/g, ')')
+             .replace(/\s+or\s+/gi, ' || ')
+             .replace(/\s+and\s+/gi, ' && ');
         
         // 執行運算
         return new Function('return ' + s)();
     } catch(e) {
-        console.error("運算失敗:", str, e);
+        console.error("運算失敗:", str, "錯誤原因:", e);
         return null;
     }
 };
